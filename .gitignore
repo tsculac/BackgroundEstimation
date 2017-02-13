@@ -1,0 +1,26 @@
+# Compiled Object files
+*.o
+
+# Compiled Dynamic libraries
+*.so
+*.d
+*.pcm
+
+# Plots
+*.root
+*.pdf
+*.png
+*.jpeg
+*.C
+*.eps
+
+# Text files
+*.txt
+
+# Directories
+
+# Scripts
+*/*.sh
+
+run
+__init__.py

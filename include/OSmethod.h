@@ -33,6 +33,7 @@
 using namespace std;
 
 const int num_of_processes         = Settings::num_of_processes;
+const int num_of_flavours          = Settings::num_of_flavours;
 
 class OSmethod: public Tree
 {
@@ -42,10 +43,13 @@ public:
 	OSmethod();
 	~OSmethod();
    
-   void FillHist( TString );
+   void FillHistos( TString );
+   void DeclareHistos();
+   void SaveHistos();
+   void SubtractWZ();
    int find_current_process( TString );
    int FindFinalState();
-   void SaveHistos();
+
    
 private:
 
@@ -56,6 +60,9 @@ private:
    TH1F* hCounters;
    
    Long64_t n_gen_events;
+   
+   vector<string> _s_process, _s_flavour;
+   string _histo_name;
    
    float jetPt[99];
    float jetEta[99];
@@ -68,7 +75,8 @@ private:
    float _lumi, partial_sample_weight;
    double gen_sum_weights, _event_weight;
    
-   TH2F *passing[num_of_processes], *failing[num_of_processes];
+   TH2F *passing[num_of_processes][num_of_flavours], *failing[num_of_processes][num_of_flavours];
+   TH2F *passing_WZ_sub[num_of_flavours], *failing_WZ_sub[num_of_flavours];
    
 };
 #endif

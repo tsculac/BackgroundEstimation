@@ -26,8 +26,10 @@ int main( int argc, char *argv[] )
 
    OSmethod *os = new OSmethod();
 
-   os->FillHist(Data);
-   os->FillHist(WZ);
+   os->FillHistos(Data);
+   os->FillHistos(WZ);
+   os->SubtractWZ();
+   
    os->SaveHistos();
    
    delete os;

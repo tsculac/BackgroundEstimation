@@ -4,7 +4,7 @@ CXXFLAGS = -g -I. -m64 $(shell root-config --cflags) -I include
 LDFLAGS = $(shell root-config --libs) -lm -lGenVector
 CXX = g++
 
-EXTLIBS = ./ext/cConstants_cc.so ./ext/FinalStates_cc.so ./ext/bitops_cc.so
+EXTLIBS = ./ext/cConstants_cc.so ./ext/FinalStates_cc.so ./ext/bitops_cc.so ./ext/Discriminants_cc.so
 
 VPATH = ./src/ ./include/
 

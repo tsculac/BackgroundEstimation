@@ -7,77 +7,129 @@
 void cConstants() {}
 
 extern "C" float getDVBF2jetsConstant(float ZZMass){
-  float par[9]={
-    1.876,
-    -55.488,
-    403.32,
-    0.3906,
-    80.8,
-    27.7,
-    -0.06,
-    54.97,
-    309.96
-  };
-  float kappa =
-    pow(1.-atan((ZZMass-par[1])/par[2])*2./TMath::Pi(), par[0])
-    + par[3]*exp(-pow((ZZMass-par[4])/par[5], 2))
-    + par[6]*exp(-pow((ZZMass-par[7])/par[8], 2));
-  float constant = kappa/(1.-kappa);
-  return constant;
+   float par[9]={
+      1.876,
+      -55.488,
+      403.32,
+      0.3906,
+      80.8,
+      27.7,
+      -0.06,
+      54.97,
+      309.96
+   };
+   float kappa =
+   pow(1.-atan((ZZMass-par[1])/par[2])*2./TMath::Pi(), par[0])
+   + par[3]*exp(-pow((ZZMass-par[4])/par[5], 2))
+   + par[6]*exp(-pow((ZZMass-par[7])/par[8], 2));
+   float constant = kappa/(1.-kappa);
+   return constant;
 }
 extern "C" float getDVBF1jetConstant(float ZZMass){
-  float par[8]={
-    0.395,
-    -0.07,
-    85.,
-    30.,
-    -0.691,
-    -5659.47,
-    5734.37,
-    0.75
-  };
-  float kappa =
-    par[0]
-    + par[1]*exp(-pow((ZZMass-par[2])/par[3], 2))
-    + par[4]*pow(log((ZZMass-par[5])/par[6]), par[7])*(ZZMass>=(par[5]+par[6]));
-  float constant = kappa/(1.-kappa);
-  return constant;
+   float par[8]={
+      0.395,
+      -0.07,
+      85.,
+      30.,
+      -0.691,
+      -5659.47,
+      5734.37,
+      0.75
+   };
+   float kappa =
+   par[0]
+   + par[1]*exp(-pow((ZZMass-par[2])/par[3], 2))
+   + par[4]*pow(log((ZZMass-par[5])/par[6]), par[7])*(ZZMass>=(par[5]+par[6]));
+   float constant = kappa/(1.-kappa);
+   return constant;
 }
-extern "C" float getDbkgkinConstant(int ZZflav, float ZZMass){ // ZZflav==id1*id2*id3*id4
-  float par[14]={
-    0.775,
-    -0.565,
-    70.,
-    5.90,
-    -0.235,
-    130.1,
-    13.25,
-    -0.33,
-    191.04,
-    16.05,
-    187.47,
-    -0.21,
-    1700.,
-    400.
-  };
-  if (abs(ZZflav)==121*121 || abs(ZZflav)==121*242 || abs(ZZflav)==242*242) par[11]=-0.42; // 4e
-  float kappa =
-    par[0]
-    +par[1]*exp(-pow(((ZZMass-par[2])/par[3]), 2))
-    +par[4]*exp(-pow(((ZZMass-par[5])/par[6]), 2))
-    +par[7]*(
-	     exp(-pow(((ZZMass-par[8])/par[9]), 2))*(ZZMass<par[8])
-	     + exp(-pow(((ZZMass-par[8])/par[10]), 2))*(ZZMass>=par[8])
-	     )
-    + par[11]*exp(-pow(((ZZMass-par[12])/par[13]), 2));
+extern "C" float getDWHhConstant(float ZZMass){
+   return 1e-3;
+}
+extern "C" float getDZHhConstant(float ZZMass){
+   return 1e-4;
+}
 
-  float constant = kappa/(1.-kappa);
-  return constant;
+extern "C" float getDVBF2jetsWP(float ZZMass, bool useQGTagging){
+   if (useQGTagging)
+      return 0.363;
+   else
+      return 1.043-460./(ZZMass+634.);
+}
+extern "C" float getDVBF1jetWP(float ZZMass, bool useQGTagging){
+   if (useQGTagging)
+      return 0.716;
+   else
+      return 0.697;
+}
+extern "C" float getDWHhWP(float ZZMass, bool useQGTagging){
+   if (useQGTagging)
+      return 0.965;
+   else
+      return 0.951;
+}
+extern "C" float getDZHhWP(float ZZMass, bool useQGTagging){
+   if (useQGTagging)
+      return 0.9952;
+   else
+      return 0.9937;
+}
+
+extern "C" float getDVBF2jetsConstant_shiftWP(float ZZMass, bool useQGTagging, float newWP) {
+   float oldc = getDVBF2jetsConstant(ZZMass);
+   float oldWP = getDVBF2jetsWP(ZZMass, useQGTagging);
+   return oldc * (oldWP/newWP) * ((1-newWP)/(1-oldWP));
+}
+extern "C" float getDVBF1jetConstant_shiftWP(float ZZMass, bool useQGTagging, float newWP) {
+   float oldc = getDVBF1jetConstant(ZZMass);
+   float oldWP = getDVBF1jetWP(ZZMass, useQGTagging);
+   return oldc * (oldWP/newWP) * ((1-newWP)/(1-oldWP));
+}
+
+extern "C" float getDWHhConstant_shiftWP(float ZZMass, bool useQGTagging, float newWP) {
+   float oldc = getDWHhConstant(ZZMass);
+   float oldWP = getDWHhWP(ZZMass, useQGTagging);
+   return oldc * (oldWP/newWP) * ((1-newWP)/(1-oldWP));
+}
+
+extern "C" float getDZHhConstant_shiftWP(float ZZMass, bool useQGTagging, float newWP) {
+   float oldc = getDZHhConstant(ZZMass);
+   float oldWP = getDZHhWP(ZZMass, useQGTagging);
+   return oldc * (oldWP/newWP) * ((1-newWP)/(1-oldWP));
+}
+
+
+extern "C" float getDbkgkinConstant(int ZZflav, float ZZMass){ // ZZflav==id1*id2*id3*id4
+   float par[14]={
+      0.775,
+      -0.565,
+      70.,
+      5.90,
+      -0.235,
+      130.1,
+      13.25,
+      -0.33,
+      191.04,
+      16.05,
+      187.47,
+      -0.21,
+      1700.,
+      400.
+   };
+   if (abs(ZZflav)==121*121 || abs(ZZflav)==121*242 || abs(ZZflav)==242*242) par[11]=-0.42; // 4e
+   float kappa =
+   par[0]
+   +par[1]*exp(-pow(((ZZMass-par[2])/par[3]), 2))
+   +par[4]*exp(-pow(((ZZMass-par[5])/par[6]), 2))
+   +par[7]*(
+            exp(-pow(((ZZMass-par[8])/par[9]), 2))*(ZZMass<par[8])
+            + exp(-pow(((ZZMass-par[8])/par[10]), 2))*(ZZMass>=par[8])
+            )
+   + par[11]*exp(-pow(((ZZMass-par[12])/par[13]), 2));
+   
+   float constant = kappa/(1.-kappa);
+   return constant;
 }
 extern "C" float getDbkgConstant(int ZZflav, float ZZMass){
-  float cbkgkin = getDbkgkinConstant(ZZflav, ZZMass);
-  if (abs(ZZflav)==121*121 || abs(ZZflav)==121*242 || abs(ZZflav)==242*242) return cbkgkin*35.6; // 4e
-  else if (abs(ZZflav)==169*169) return cbkgkin*22.8; // 4mu
-  else if (abs(ZZflav)==121*169 || abs(ZZflav)==242*169) return cbkgkin*41.8; // 2e2mu
-  else return 1.;
+   return getDbkgkinConstant(ZZflav, ZZMass);
 }

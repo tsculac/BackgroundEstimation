@@ -23,14 +23,20 @@ int main( int argc, char *argv[] )
    
    TString Data    = path + "Data" + file_name;
    TString WZ      = path + "WZTo3LNu" + file_name;
+   
+   float pT_bins[] = {5, 7, 10, 15, 30, 50, 100};
 
    OSmethod *os = new OSmethod();
 
+   os->SetLumi(36.8);
    os->FillHistos(Data);
    os->FillHistos(WZ);
-   os->SubtractWZ();
+   os->SubtractWZ(false);
+   os->SaveHistos("Histos.root");
    
-   os->SaveHistos();
+   os->GetHistos("Histos.root");
+   os->Set_pT_binning(7, pT_bins);
+   os->ProduceFakeRates("FakeRates_OS_Moriond17.root");
    
    delete os;
 }

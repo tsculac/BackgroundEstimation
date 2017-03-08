@@ -212,10 +212,7 @@ void OSmethod::SubtractWZ( bool remove_negative_bins)
 {
    for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
    {
-//      passing[Settings::Total][i_flav]->Add(passing[Settings::Data][i_flav], 1.);
       passing[Settings::Total][i_flav]->Add(passing[Settings::WZ][i_flav], -1.);
-      
-//      failing[Settings::Total][i_flav]->Add(failing[Settings::Data][i_flav], 1.);
       failing[Settings::Total][i_flav]->Add(failing[Settings::WZ][i_flav], -1.);
    }
 
@@ -328,11 +325,11 @@ void OSmethod::ProduceFakeRates( TString file_name )
 
 
 //===============================================================
-void OSmethod::RemoveNegativeBins(TH2F *h) // too slow atm, can not be used like this
+void OSmethod::RemoveNegativeBins(TH2F *h)
 {
    for (int i_bin_x = 1; i_bin_x <= 80; i_bin_x++)
    {
-      for (int i_bin_y = 1; i_bin_y <= 2; i_bin_x++)
+      for (int i_bin_y = 1; i_bin_y <= 2; i_bin_y++)
       {
          if( h->GetBinContent(i_bin_x,i_bin_y) < 0.) h->SetBinContent(i_bin_x,i_bin_y,0);
       }

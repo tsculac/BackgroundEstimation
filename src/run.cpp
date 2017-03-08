@@ -32,7 +32,7 @@ int main( int argc, char *argv[] )
    
    os->FillHistos(Data);
    os->FillHistos(WZ);
-   os->SubtractWZ(false);
+   os->SubtractWZ(true);
    os->SaveHistos("Histos.root");
    
    os->GetHistos("Histos.root");

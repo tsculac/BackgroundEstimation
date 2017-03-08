@@ -91,7 +91,6 @@ private:
 
    
    TH2F *passing[num_of_processes][num_of_flavours], *failing[num_of_processes][num_of_flavours];
-   //TH2F *passing_WZ_sub[num_of_flavours], *failing_WZ_sub[num_of_flavours];
    
    TGraphErrors *FR_OS_electron_EB, *FR_OS_electron_EE, *FR_OS_muon_EB, *FR_OS_muon_EE;
    

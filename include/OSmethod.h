@@ -28,12 +28,15 @@
 #include "Settings.h"
 #include "Category.h"
 #include "FinalStates.h"
+#include "FakeRates.h"
 #include "bitops.h"
 
 using namespace std;
 
 const int num_of_processes         = Settings::num_of_processes;
 const int num_of_flavours          = Settings::num_of_flavours;
+const int num_of_final_states      = Settings::num_of_final_states;
+const int num_of_categories        = Settings::num_of_categories;
 const int num_of_eta_bins          = Settings::num_of_eta_bins;
 
 class OSmethod: public Tree
@@ -45,6 +48,7 @@ public:
 	~OSmethod();
    
    void FillHistos( TString );
+   void MakeHistogramsZX( TString, TString );
    void DeclareHistos();
    void SaveHistos( TString );
    void GetHistos( TString );
@@ -55,6 +59,7 @@ public:
    void SetLumi( float );
    int find_current_process( TString );
    int FindFinalState();
+   int FindFinalStateZX();
 
    
 private:
@@ -77,14 +82,16 @@ private:
    float jetQGL[99];
    float jetPgOverPq[99];
    
-   float _pT_bins[];
+   float _pT_bins[99];
    
-   int _current_process, _current_final_state, _current_category;
-   float _lumi, partial_sample_weight;
+   int _current_process, _current_final_state, _current_category, _n_pT_bins;
+   float _lumi, _yield_SR;
    double gen_sum_weights, _event_weight;
+   vector< vector <float> > _expected_yield_SR, _number_of_events_CR;
+
    
    TH2F *passing[num_of_processes][num_of_flavours], *failing[num_of_processes][num_of_flavours];
-   TH2F *passing_WZ_sub[num_of_flavours], *failing_WZ_sub[num_of_flavours];
+   //TH2F *passing_WZ_sub[num_of_flavours], *failing_WZ_sub[num_of_flavours];
    
    TGraphErrors *FR_OS_electron_EB, *FR_OS_electron_EE, *FR_OS_muon_EB, *FR_OS_muon_EE;
    

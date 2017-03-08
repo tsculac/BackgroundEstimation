@@ -12,11 +12,13 @@ SRCPP = run.cpp\
         OSmethod.cpp\
 		  Tree.cpp\
 		  Settings.cpp\
-		  Category.cpp
+		  Category.cpp\
+		  FakeRates.cpp
 INCLUDES = OSmethod.h\
 	   Tree.h\
 		  Settings.h\
 		  Category.h\
+		  FakeRates.h\
 
          
 OBJCPP = $(patsubst %.cpp,obj/%.o,$(SRCPP))

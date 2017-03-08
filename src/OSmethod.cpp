@@ -73,17 +73,60 @@ void OSmethod::FillHistos( TString input_file_data_name )
          }
       }
    } // END events loop
-
+   
    cout << "[INFO] Processing of " << input_file_data_name << " done." << endl;
 }
 //===============================================================================
+
+
+//===============================================================================
+void OSmethod::MakeHistogramsZX( TString input_file_data_name, TString  input_file_FR_name )
+{
+   
+   FakeRates *FR = new FakeRates( input_file_FR_name );
+   
+   input_file_data = new TFile("./" + input_file_data_name);
+   input_tree_data = (TTree*)input_file_data->Get("CRZLLTree/candTree");
+   Init( input_tree_data, input_file_data_name , false);
+   
+   
+   if (fChain == 0) return;
+   
+   Long64_t nentries = fChain->GetEntriesFast();
+   
+   Long64_t nbytes = 0, nb = 0;
+   
+   for (Long64_t jentry=0; jentry<nentries;jentry++)
+   {
+      
+      Long64_t ientry = LoadTree(jentry);
+      if (ientry < 0) break;
+      nb = fChain->GetEntry(jentry);
+      nbytes += nb;
+      
+      if ( !CRflag ) continue;
+      if ( !test_bit(CRflag, CRZLLss) ) continue;
+      
+      _current_final_state = FindFinalStateZX();
+      
+      _current_category = categoryMor17(nExtraLep, nExtraZ, nCleanedJetsPt30, nCleanedJetsPt30BTagged_bTagSF, jetQGL,
+                                        p_JJQCD_SIG_ghg2_1_JHUGen_JECNominal, p_JQCD_SIG_ghg2_1_JHUGen_JECNominal, p_JJVBF_SIG_ghv1_1_JHUGen_JECNominal,
+                                        p_JVBF_SIG_ghv1_1_JHUGen_JECNominal, pAux_JVBF_SIG_ghv1_1_JHUGen_JECNominal, p_HadWH_SIG_ghw1_1_JHUGen_JECNominal,
+                                        p_HadZH_SIG_ghz1_1_JHUGen_JECNominal, jetPhi, ZZMass, PFMET, true, false);
+      
+   }
+   
+}
+//===============================================================================
+
+
 
 //===============================================================
 void OSmethod::DeclareHistos()
 {
    for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
    {
-      for (int i_proc = 0; i_proc < num_of_processes; i_proc++)
+      for (int i_proc = 0; i_proc < Settings::Total; i_proc++)
       {
          _histo_name = "Passing_" + _s_process.at(i_proc) + "_" + _s_flavour.at(i_flav);
          passing[i_proc][i_flav] = new TH2F(_histo_name,"", 80, 0, 80, 2, 0, 2);
@@ -94,9 +137,9 @@ void OSmethod::DeclareHistos()
       }
       
       _histo_name = "Passing_WZsubtracted_" + _s_flavour.at(i_flav);
-      passing_WZ_sub[i_flav] = new TH2F(_histo_name,"", 80, 0, 80, 2, 0, 2);
+      passing[Settings::Total][i_flav] = new TH2F(_histo_name,"", 80, 0, 80, 2, 0, 2);
       _histo_name = "Failing_WZsubtracted_" + _s_flavour.at(i_flav);
-      failing_WZ_sub[i_flav] = new TH2F(_histo_name,"", 80, 0, 80, 2, 0, 2);
+      failing[Settings::Total][i_flav] = new TH2F(_histo_name,"", 80, 0, 80, 2, 0, 2);
 
    }
 
@@ -109,16 +152,23 @@ void OSmethod::SaveHistos( TString file_name)
    TFile* fOutHistos = new TFile(file_name, "recreate");
    fOutHistos->cd();
    
+   // Copy data histos to total histos, if there is no WZ subtraction this is the final histo for fake rate calculation
    for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
    {
-      for (int i_proc = 0; i_proc < num_of_processes; i_proc++)
+      passing[Settings::Total][i_flav]->Add(passing[Settings::Data][i_flav], 1.);
+      failing[Settings::Total][i_flav]->Add(failing[Settings::Data][i_flav], 1.);
+   }
+
+   for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
+   {
+      for (int i_proc = 0; i_proc < Settings::Total; i_proc++)
       {
          passing[i_proc][i_flav]->Write();
          failing[i_proc][i_flav]->Write();
       }
       
-   passing_WZ_sub[i_flav]->Write();
-   failing_WZ_sub[i_flav]->Write();
+   passing[Settings::Total][i_flav]->Write();
+   failing[Settings::Total][i_flav]->Write();
       
    }
    
@@ -136,7 +186,7 @@ void OSmethod::GetHistos( TString file_name)
    
    for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
    {
-      for (int i_proc = 0; i_proc < num_of_processes; i_proc++)
+      for (int i_proc = 0; i_proc < Settings::Total; i_proc++)
       {
          _histo_name = "Passing_" + _s_process.at(i_proc) + "_" + _s_flavour.at(i_flav);
          passing[i_proc][i_flav] = (TH2F*)histo_file->Get(_histo_name);
@@ -147,9 +197,9 @@ void OSmethod::GetHistos( TString file_name)
       }
       
       _histo_name = "Passing_WZsubtracted_" + _s_flavour.at(i_flav);
-      passing_WZ_sub[i_flav] = (TH2F*)histo_file->Get(_histo_name);
+      passing[Settings::Total][i_flav] = (TH2F*)histo_file->Get(_histo_name);
       _histo_name = "Failing_WZsubtracted_" + _s_flavour.at(i_flav);
-      failing_WZ_sub[i_flav] = (TH2F*)histo_file->Get(_histo_name);
+      failing[Settings::Total][i_flav] = (TH2F*)histo_file->Get(_histo_name);
       
    }
    
@@ -162,11 +212,11 @@ void OSmethod::SubtractWZ( bool remove_negative_bins)
 {
    for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
    {
-      passing_WZ_sub[i_flav]->Add(passing[Settings::Data][i_flav], 1.);
-      passing_WZ_sub[i_flav]->Add(passing[Settings::WZ][i_flav], -1.);
+//      passing[Settings::Total][i_flav]->Add(passing[Settings::Data][i_flav], 1.);
+      passing[Settings::Total][i_flav]->Add(passing[Settings::WZ][i_flav], -1.);
       
-      failing_WZ_sub[i_flav]->Add(failing[Settings::Data][i_flav], 1.);
-      failing_WZ_sub[i_flav]->Add(failing[Settings::WZ][i_flav], -1.);
+//      failing[Settings::Total][i_flav]->Add(failing[Settings::Data][i_flav], 1.);
+      failing[Settings::Total][i_flav]->Add(failing[Settings::WZ][i_flav], -1.);
    }
 
    cout << "[INFO] WZ contribution subtracted." << endl;
@@ -175,11 +225,11 @@ void OSmethod::SubtractWZ( bool remove_negative_bins)
    {
       for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
       {
-         RemoveNegativeBins( passing_WZ_sub[i_flav] );
-         RemoveNegativeBins( passing_WZ_sub[i_flav] );
+         RemoveNegativeBins( passing[Settings::Total][i_flav] );
+         RemoveNegativeBins( passing[Settings::Total][i_flav] );
          
-         RemoveNegativeBins( failing_WZ_sub[i_flav] );
-         RemoveNegativeBins( failing_WZ_sub[i_flav] );
+         RemoveNegativeBins( failing[Settings::Total][i_flav] );
+         RemoveNegativeBins( failing[Settings::Total][i_flav] );
       }
       cout << "[INFO] Negative bins removed." << endl;
    }
@@ -190,19 +240,20 @@ void OSmethod::SubtractWZ( bool remove_negative_bins)
 //===============================================================
 void OSmethod::ProduceFakeRates( TString file_name )
 {
-   for(int i_pT_bin = 0; i_pT_bin < 7 - 1; i_pT_bin++ )
+   for(int i_pT_bin = 0; i_pT_bin < _n_pT_bins - 1; i_pT_bin++ )
    {
       double temp_NP = 0;
       double temp_NF = 0;
       double temp_error_x = 0;
       double temp_error_NP = 0;
       double temp_error_NF = 0;
+      //cout << "i_pT_bin: " << i_pT_bin << endl;
       
       for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
       {
          if ( i_flav == Settings::ele && i_pT_bin == 0) continue; // electrons do not have 5 - 7 GeV bin
-         temp_NP = passing_WZ_sub[i_flav]->IntegralAndError(passing_WZ_sub[i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin]),passing_WZ_sub[i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin+1]) - 1, 1, 1, temp_error_NP);
-         temp_NF = failing_WZ_sub[i_flav]->IntegralAndError(failing_WZ_sub[i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin]),failing_WZ_sub[i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin+1]) - 1, 1, 1, temp_error_NF);
+         temp_NP = passing[Settings::Total][i_flav]->IntegralAndError(passing[Settings::Total][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin]),passing[Settings::Total][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin+1]) - 1, 1, 1, temp_error_NP);
+         temp_NF = failing[Settings::Total][i_flav]->IntegralAndError(failing[Settings::Total][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin]),failing[Settings::Total][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin+1]) - 1, 1, 1, temp_error_NF);
          
 //         cout << "========================================" << endl;
 //         cout << "pT bin = " << _pT_bins[i_pT_bin] << endl;
@@ -221,8 +272,8 @@ void OSmethod::ProduceFakeRates( TString file_name )
          vector_EX[Settings::EB][i_flav].push_back((_pT_bins[i_pT_bin + 1] - _pT_bins[i_pT_bin])/2);
          vector_EY[Settings::EB][i_flav].push_back(sqrt((temp_error_NP/temp_NP)*(temp_error_NP/temp_NP) + (temp_error_NF/temp_NF)*(temp_error_NF/temp_NF))); // simple error, consider updating
          
-         temp_NP = passing_WZ_sub[i_flav]->IntegralAndError(passing_WZ_sub[i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin]),passing_WZ_sub[i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin+1]) - 1, 2, 2, temp_error_NP);
-         temp_NF = failing_WZ_sub[i_flav]->IntegralAndError(failing_WZ_sub[i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin]),failing_WZ_sub[i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin+1]) - 1, 2, 2, temp_error_NF);
+         temp_NP = passing[Settings::Total][i_flav]->IntegralAndError(passing[Settings::Total][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin]),passing[Settings::Total][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin+1]) - 1, 2, 2, temp_error_NP);
+         temp_NF = failing[Settings::Total][i_flav]->IntegralAndError(failing[Settings::Total][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin]),failing[Settings::Total][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin+1]) - 1, 2, 2, temp_error_NF);
          
          vector_X[Settings::EE][i_flav].push_back((_pT_bins[i_pT_bin] + _pT_bins[i_pT_bin + 1])/2);
          vector_Y[Settings::EE][i_flav].push_back(temp_NP/(temp_NP+temp_NF));
@@ -294,6 +345,8 @@ void OSmethod::RemoveNegativeBins(TH2F *h) // too slow atm, can not be used like
 //===============================================================
 void OSmethod::Set_pT_binning(int size, float *bins)
 {
+   _n_pT_bins = size;
+
    for (int i = 0; i < size; i++)
    {
       _pT_bins[i] = bins[i];
@@ -355,6 +408,39 @@ int OSmethod::FindFinalState()
    return final_state;
 }
 //=============================
+
+//=============================
+int OSmethod::FindFinalStateZX()
+{
+   int final_state = -999;
+   
+   if ( Z1Flav == -121 )
+   {
+      if ( Z2Flav == +121 )
+         final_state = Settings::fs4e;
+      else if ( Z2Flav == +169 )
+         final_state = Settings::fs2e2mu;
+      else
+         cerr << "[ERROR] in event " << RunNumber << ":" << LumiNumber << ":" << EventNumber << ", Z2Flav = " << Z2Flav << endl;
+   }
+   else if ( Z1Flav == -169 )
+   {
+      if ( Z2Flav == +121 )
+         final_state = Settings::fs2mu2e;
+      else if ( Z2Flav == +169 )
+         final_state = Settings::fs4mu;
+      else
+         cerr << "[ERROR] in event " << RunNumber << ":" << LumiNumber << ":" << EventNumber << ", Z2Flav = " << Z2Flav << endl;
+   }
+   else
+   {
+      cerr << "[ERROR] in event " << RunNumber << ":" << LumiNumber << ":" << EventNumber << ", Z1Flav = " << Z1Flav << endl;
+   }
+   
+   return final_state;
+}
+//=============================
+
 
 
 

@@ -26,6 +26,7 @@
 // Include classes
 #include "Tree.h"
 #include "Settings.h"
+#include "Plots.h"
 #include "Category.h"
 #include "FinalStates.h"
 #include "FakeRates.h"
@@ -37,6 +38,7 @@ const int num_of_processes         = Settings::num_of_processes;
 const int num_of_flavours          = Settings::num_of_flavours;
 const int num_of_final_states      = Settings::num_of_final_states;
 const int num_of_categories        = Settings::num_of_categories;
+const int num_of_regions           = Settings::num_of_regions;
 const int num_of_eta_bins          = Settings::num_of_eta_bins;
 
 class OSmethod: public Tree
@@ -47,22 +49,27 @@ public:
 	OSmethod();
 	~OSmethod();
    
-   void FillHistos( TString );
+   void FillFRHistos( TString );
+   void FillDataMCPlots( TString );
    void MakeHistogramsZX( TString, TString );
-   void DeclareHistos();
-   void SaveHistos( TString );
-   void GetHistos( TString );
-   void SubtractWZ( bool );
+   void SaveFRHistos( TString, bool );
+   void SaveDataMCHistos( TString );
+   void GetFRHistos( TString );
+   void GetDataMCHistos( TString );
+   void SubtractWZ( );
    void ProduceFakeRates( TString );
-   void RemoveNegativeBins( TH2F* );
    void Set_pT_binning( int, float* );
    void SetLumi( float );
-   int find_current_process( TString );
-   int FindFinalState();
-   int FindFinalStateZX();
-
    
 private:
+   
+   void DeclareFRHistos();
+   void DeclareDataMCHistos();
+   void RemoveNegativeBins( TH2F* );
+   void FillDataMCInclusive();
+   int find_current_process( TString );
+   int FindFinalState();
+   float calculate_K_factor( TString );
 
    TFile *input_file, *input_file_data;
    TFile *fOutHistos;
@@ -72,8 +79,8 @@ private:
    
    Long64_t n_gen_events;
    
-   vector<string> _s_process, _s_flavour;
-   TString _histo_name;
+   vector<string> _s_process, _s_flavour, _s_final_state, _s_category, _s_region;
+   TString _histo_name, _histo_labels;
    
    float jetPt[99];
    float jetEta[99];
@@ -85,11 +92,11 @@ private:
    float _pT_bins[99];
    
    int _current_process, _current_final_state, _current_category, _n_pT_bins;
-   float _lumi, _yield_SR;
+   float _lumi, _yield_SR, _k_factor;
    double gen_sum_weights, _event_weight;
    vector< vector <float> > _expected_yield_SR, _number_of_events_CR;
 
-   
+   TH1F *histos_1D[num_of_regions][num_of_processes][num_of_final_states][num_of_categories];
    TH2F *passing[num_of_processes][num_of_flavours], *failing[num_of_processes][num_of_flavours];
    
    TGraphErrors *FR_OS_electron_EB, *FR_OS_electron_EE, *FR_OS_muon_EB, *FR_OS_muon_EE;

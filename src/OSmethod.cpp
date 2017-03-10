@@ -11,11 +11,33 @@ OSmethod::OSmethod():Tree()
    
    _s_process.push_back("Data");
    _s_process.push_back("WZ");
+   _s_process.push_back("qqZZ");
+   _s_process.push_back("DY");
+   _s_process.push_back("ttbar");
    
    _s_flavour.push_back("ele");
    _s_flavour.push_back("mu");
    
-   DeclareHistos();
+   _s_final_state.push_back("4e");
+   _s_final_state.push_back("4mu");
+   _s_final_state.push_back("2e2mu");
+   _s_final_state.push_back("2mu2e");
+   _s_final_state.push_back("4l");
+   
+   _s_category.push_back("UnTagged");
+   _s_category.push_back("VBF1jTagged");
+   _s_category.push_back("VBF2jTagged");
+   _s_category.push_back("VHLeptTagged");
+   _s_category.push_back("VHHadrTagged");
+   _s_category.push_back("ttHTagged");
+   _s_category.push_back("VHMETTagged");
+   _s_category.push_back("Inclusive");
+   
+   _s_region.push_back("2P2F");
+   _s_region.push_back("3P1F");
+   
+   DeclareFRHistos();
+   DeclareDataMCHistos();
 }
 //============================================================
 
@@ -30,7 +52,7 @@ OSmethod::~OSmethod()
 
 
 //===============================================================================
-void OSmethod::FillHistos( TString input_file_data_name )
+void OSmethod::FillFRHistos( TString input_file_data_name )
 {
    input_file_data = new TFile("./" + input_file_data_name);
    
@@ -59,7 +81,8 @@ void OSmethod::FillHistos( TString input_file_data_name )
       if( fabs(Z1Mass - 91.2) < 7)
       {
          // Final event weight
-         _event_weight = (_lumi * 1000 * xsec * overallEventWeight) / gen_sum_weights;
+         _k_factor = calculate_K_factor(input_file_data_name);
+         _event_weight = (_lumi * 1000 * xsec * _k_factor * overallEventWeight) / gen_sum_weights;
 
          if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35)
          {
@@ -77,6 +100,56 @@ void OSmethod::FillHistos( TString input_file_data_name )
    cout << "[INFO] Processing of " << input_file_data_name << " done." << endl;
 }
 //===============================================================================
+
+
+
+//===============================================================================
+void OSmethod::FillDataMCPlots( TString input_file_data_name )
+{
+   input_file_data = new TFile("./" + input_file_data_name);
+   
+   hCounters = (TH1F*)input_file_data->Get("CRZLLTree/Counters");
+   gen_sum_weights = (Long64_t)hCounters->GetBinContent(40);
+   
+   input_tree_data = (TTree*)input_file_data->Get("CRZLLTree/candTree");
+   Init( input_tree_data, input_file_data_name , true);
+   
+   _current_process = find_current_process(input_file_data_name);
+   
+   if (fChain == 0) return;
+   
+   Long64_t nentries = fChain->GetEntriesFast();
+   
+   Long64_t nbytes = 0, nb = 0;
+   
+   for (Long64_t jentry=0; jentry<nentries;jentry++)
+   {
+      Long64_t ientry = LoadTree(jentry);
+      if (ientry < 0) break;
+      nb = fChain->GetEntry(jentry);
+      nbytes += nb;
+      
+      if (!(test_bit(CRflag, CRZLLos_2P2F) && test_bit(CRflag, CRZLLos_2P2F))) continue;
+      
+      _current_final_state = FindFinalState();
+      
+      _current_category = categoryMor17(nExtraLep, nExtraZ, nCleanedJetsPt30, nCleanedJetsPt30BTagged_bTagSF, jetQGL,
+                                        p_JJQCD_SIG_ghg2_1_JHUGen_JECNominal, p_JQCD_SIG_ghg2_1_JHUGen_JECNominal, p_JJVBF_SIG_ghv1_1_JHUGen_JECNominal,
+                                        p_JVBF_SIG_ghv1_1_JHUGen_JECNominal, pAux_JVBF_SIG_ghv1_1_JHUGen_JECNominal, p_HadWH_SIG_ghw1_1_JHUGen_JECNominal,
+                                        p_HadZH_SIG_ghz1_1_JHUGen_JECNominal, jetPhi, ZZMass, PFMET, true, false);
+      
+      _k_factor = calculate_K_factor(input_file_data_name);
+      _event_weight = (_lumi * 1000 * xsec * _k_factor * overallEventWeight) / gen_sum_weights;
+      
+      if ( test_bit(CRflag, CRZLLos_2P2F) ) histos_1D[Settings::reg2P2F][_current_process][_current_final_state][_current_category]->Fill(ZZMass, (_current_process == Settings::Data) ? 1 :  _event_weight);
+      if ( test_bit(CRflag, CRZLLos_3P1F) ) histos_1D[Settings::reg2P2F][_current_process][_current_final_state][_current_category]->Fill(ZZMass, (_current_process == Settings::Data) ? 1 :  _event_weight);
+   
+   } // END events loop
+   
+   cout << "[INFO] Processing of " << input_file_data_name << " done." << endl;
+}
+//===============================================================================
+
 
 
 //===============================================================================
@@ -107,7 +180,7 @@ void OSmethod::MakeHistogramsZX( TString input_file_data_name, TString  input_fi
       if ( !CRflag ) continue;
       if ( !test_bit(CRflag, CRZLLss) ) continue;
       
-      _current_final_state = FindFinalStateZX();
+      _current_final_state = FindFinalState();
       
       _current_category = categoryMor17(nExtraLep, nExtraZ, nCleanedJetsPt30, nCleanedJetsPt30BTagged_bTagSF, jetQGL,
                                         p_JJQCD_SIG_ghg2_1_JHUGen_JECNominal, p_JQCD_SIG_ghg2_1_JHUGen_JECNominal, p_JJVBF_SIG_ghv1_1_JHUGen_JECNominal,
@@ -122,7 +195,7 @@ void OSmethod::MakeHistogramsZX( TString input_file_data_name, TString  input_fi
 
 
 //===============================================================
-void OSmethod::DeclareHistos()
+void OSmethod::DeclareFRHistos()
 {
    for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
    {
@@ -136,9 +209,9 @@ void OSmethod::DeclareHistos()
 
       }
       
-      _histo_name = "Passing_WZsubtracted_" + _s_flavour.at(i_flav);
+      _histo_name = "Passing_Total_" + _s_flavour.at(i_flav);
       passing[Settings::Total][i_flav] = new TH2F(_histo_name,"", 80, 0, 80, 2, 0, 2);
-      _histo_name = "Failing_WZsubtracted_" + _s_flavour.at(i_flav);
+      _histo_name = "Failing_Total_" + _s_flavour.at(i_flav);
       failing[Settings::Total][i_flav] = new TH2F(_histo_name,"", 80, 0, 80, 2, 0, 2);
 
    }
@@ -147,7 +220,29 @@ void OSmethod::DeclareHistos()
 //===============================================================
 
 //===============================================================
-void OSmethod::SaveHistos( TString file_name)
+void OSmethod::DeclareDataMCHistos()
+{
+   for (int i_reg = 0; i_reg < num_of_regions; i_reg ++)
+   {
+      for (int i_proc = 0; i_proc < Settings::Total; i_proc++)
+      {
+         for (int i_fs = 0; i_fs < num_of_final_states; i_fs++)
+         {
+            for (int i_cat = 0; i_cat < num_of_categories; i_cat++)
+            {
+               _histo_name = "M4l_" + _s_region.at(i_reg) + "_" + _s_process.at(i_proc) + "_" + _s_final_state.at(i_fs) + "_" + _s_category.at(i_cat);
+               _histo_labels = ";" + Plots::M4l().var_X_label + ";" + Plots::M4l().var_Y_label;
+               histos_1D[i_reg][i_proc][i_fs][i_cat] = new TH1F(_histo_name, _histo_labels, Plots::M4l().var_N_bin, Plots::M4l().var_min, Plots::M4l().var_max);
+            }
+         }
+      }
+   }
+   
+}
+//===============================================================
+
+//===============================================================
+void OSmethod::SaveFRHistos( TString file_name,  bool remove_negative_bins)
 {
    TFile* fOutHistos = new TFile(file_name, "recreate");
    fOutHistos->cd();
@@ -157,6 +252,19 @@ void OSmethod::SaveHistos( TString file_name)
    {
       passing[Settings::Total][i_flav]->Add(passing[Settings::Data][i_flav], 1.);
       failing[Settings::Total][i_flav]->Add(failing[Settings::Data][i_flav], 1.);
+   }
+   
+   if ( remove_negative_bins ) // Set negative bins to zero
+   {
+      for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
+      {
+         RemoveNegativeBins( passing[Settings::Total][i_flav] );
+         RemoveNegativeBins( passing[Settings::Total][i_flav] );
+         
+         RemoveNegativeBins( failing[Settings::Total][i_flav] );
+         RemoveNegativeBins( failing[Settings::Total][i_flav] );
+      }
+      cout << "[INFO] Negative bins removed." << endl;
    }
 
    for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
@@ -175,12 +283,74 @@ void OSmethod::SaveHistos( TString file_name)
    fOutHistos->Close();
    delete fOutHistos;
    
-   cout << "[INFO] All histograms saved." << endl;
+   cout << "[INFO] All FakeRate histograms saved." << endl;
 }
 //===============================================================
 
 //===============================================================
-void OSmethod::GetHistos( TString file_name)
+void OSmethod::SaveDataMCHistos( TString file_name )
+{
+   FillDataMCInclusive();
+   
+   TFile* fOutHistos = new TFile(file_name, "recreate");
+   fOutHistos->cd();
+   
+   for (int i_reg = 0; i_reg < num_of_regions; i_reg ++)
+   {
+      for (int i_proc = 0; i_proc < Settings::Total; i_proc++)
+      {
+         for (int i_fs = 0; i_fs < num_of_final_states; i_fs++)
+         {
+            for (int i_cat = 0; i_cat < num_of_categories; i_cat++)
+            {
+               histos_1D[i_reg][i_proc][i_fs][i_cat]->Write();
+            }
+         }
+      }
+   }
+   
+   fOutHistos->Close();
+   delete fOutHistos;
+   
+   cout << "[INFO] All Data/MC histograms saved." << endl;
+}
+//===============================================================
+
+//===============================================================
+void OSmethod::FillDataMCInclusive( )
+{
+   for (int i_reg = 0; i_reg < num_of_regions; i_reg ++)
+   {
+      for (int i_proc = 0; i_proc < Settings::Total; i_proc++)
+      {
+         for (int i_fs = 0; i_fs < Settings::fs4l; i_fs++)
+         {
+            for (int i_cat = 0; i_cat < Settings::inclusive; i_cat++)
+            {
+               histos_1D[i_reg][i_proc][i_fs][Settings::inclusive]->Add(histos_1D[i_reg][i_proc][i_fs][i_cat]);
+               histos_1D[i_reg][i_proc][Settings::fs4l][i_cat]    ->Add(histos_1D[i_reg][i_proc][i_fs][i_cat]);
+            }
+         }
+      }
+   }
+   
+   for (int i_reg = 0; i_reg < num_of_regions; i_reg ++)
+   {
+      for (int i_proc = 0; i_proc < Settings::Total; i_proc++)
+      {
+         for (int i_fs = 0; i_fs < Settings::fs4l; i_fs++)
+         {
+            histos_1D[i_reg][i_proc][Settings::fs4l][Settings::inclusive]->Add(histos_1D[i_reg][i_proc][i_fs][Settings::inclusive]);
+         }
+      }
+   }
+   
+   cout << "[INFO] All Data/MC histograms summed." << endl;
+}
+//===============================================================
+
+//===============================================================
+void OSmethod::GetFRHistos( TString file_name)
 {
    TFile* histo_file = TFile::Open(file_name);
    
@@ -196,19 +366,45 @@ void OSmethod::GetHistos( TString file_name)
          
       }
       
-      _histo_name = "Passing_WZsubtracted_" + _s_flavour.at(i_flav);
+      _histo_name = "Passing_Total_" + _s_flavour.at(i_flav);
       passing[Settings::Total][i_flav] = (TH2F*)histo_file->Get(_histo_name);
-      _histo_name = "Failing_WZsubtracted_" + _s_flavour.at(i_flav);
+      _histo_name = "Failing_Total_" + _s_flavour.at(i_flav);
       failing[Settings::Total][i_flav] = (TH2F*)histo_file->Get(_histo_name);
       
    }
    
-   cout << "[INFO] All histograms retrieved from file." << endl;
+   cout << "[INFO] All FakeRate histograms retrieved from file." << endl;
 }
 //===============================================================
 
 //===============================================================
-void OSmethod::SubtractWZ( bool remove_negative_bins)
+void OSmethod::GetDataMCHistos( TString file_name)
+{
+   TFile* histo_file = TFile::Open(file_name);
+   
+   for (int i_reg = 0; i_reg < num_of_regions; i_reg ++)
+   {
+      for (int i_proc = 0; i_proc < Settings::Total; i_proc++)
+      {
+         for (int i_fs = 0; i_fs < num_of_final_states; i_fs++)
+         {
+            for (int i_cat = 0; i_cat < num_of_categories; i_cat++)
+            {
+               _histo_name = "M4l_" + _s_region.at(i_reg) + "_" + _s_process.at(i_proc) + "_" + _s_final_state.at(i_fs) + "_" + _s_category.at(i_cat);
+               histos_1D[i_reg][i_proc][i_fs][i_cat] = (TH1F*)histo_file->Get(_histo_name);
+            }
+         }
+      }
+   }
+   
+   cout << "[INFO] All Data/MC histograms retrieved from file." << endl;
+}
+
+//===============================================================
+
+
+//===============================================================
+void OSmethod::SubtractWZ()
 {
    for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
    {
@@ -217,19 +413,6 @@ void OSmethod::SubtractWZ( bool remove_negative_bins)
    }
 
    cout << "[INFO] WZ contribution subtracted." << endl;
-   
-   if ( remove_negative_bins )
-   {
-      for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
-      {
-         RemoveNegativeBins( passing[Settings::Total][i_flav] );
-         RemoveNegativeBins( passing[Settings::Total][i_flav] );
-         
-         RemoveNegativeBins( failing[Settings::Total][i_flav] );
-         RemoveNegativeBins( failing[Settings::Total][i_flav] );
-      }
-      cout << "[INFO] Negative bins removed." << endl;
-   }
    
 }
 //===============================================================
@@ -368,6 +551,10 @@ int OSmethod::find_current_process( TString input_file_name )
    // Assign dataset to correct process
    if ( input_file_name.Contains("Data") )           current_process = Settings::Data;
    if ( input_file_name.Contains("WZ") )             current_process = Settings::WZ;
+   if ( input_file_name.Contains("ZZTo4l") )         current_process = Settings::qqZZ;
+   if ( input_file_name.Contains("DYJetsToLL") )     current_process = Settings::DY;
+   if ( input_file_name.Contains("TTJets") )         current_process = Settings::ttbar;
+   if ( input_file_name.Contains("TTTo2L2Nu") )      current_process = Settings::ttbar;
    
    return current_process;
 }
@@ -381,18 +568,18 @@ int OSmethod::FindFinalState()
 
    if ( Z1Flav == -121 )
    {
-      if ( Z2Flav == +121 )
+      if ( Z2Flav == -121 )
          final_state = Settings::fs4e;
-      else if ( Z2Flav == +169 )
+      else if ( Z2Flav == -169 )
          final_state = Settings::fs2e2mu;
       else
          cerr << "[ERROR] in event " << RunNumber << ":" << LumiNumber << ":" << EventNumber << ", Z2Flav = " << Z2Flav << endl;
       }
    else if ( Z1Flav == -169 )
    {
-      if ( Z2Flav == +121 )
+      if ( Z2Flav == -121 )
          final_state = Settings::fs2mu2e;
-      else if ( Z2Flav == +169 )
+      else if ( Z2Flav == -169 )
          final_state = Settings::fs4mu;
       else
          cerr << "[ERROR] in event " << RunNumber << ":" << LumiNumber << ":" << EventNumber << ", Z2Flav = " << Z2Flav << endl;
@@ -406,37 +593,24 @@ int OSmethod::FindFinalState()
 }
 //=============================
 
-//=============================
-int OSmethod::FindFinalStateZX()
+
+//=================================
+float OSmethod::calculate_K_factor(TString input_file_name)
 {
-   int final_state = -999;
    
-   if ( Z1Flav == -121 )
-   {
-      if ( Z2Flav == +121 )
-         final_state = Settings::fs4e;
-      else if ( Z2Flav == +169 )
-         final_state = Settings::fs2e2mu;
-      else
-         cerr << "[ERROR] in event " << RunNumber << ":" << LumiNumber << ":" << EventNumber << ", Z2Flav = " << Z2Flav << endl;
-   }
-   else if ( Z1Flav == -169 )
-   {
-      if ( Z2Flav == +121 )
-         final_state = Settings::fs2mu2e;
-      else if ( Z2Flav == +169 )
-         final_state = Settings::fs4mu;
-      else
-         cerr << "[ERROR] in event " << RunNumber << ":" << LumiNumber << ":" << EventNumber << ", Z2Flav = " << Z2Flav << endl;
-   }
-   else
-   {
-      cerr << "[ERROR] in event " << RunNumber << ":" << LumiNumber << ":" << EventNumber << ", Z1Flav = " << Z1Flav << endl;
-   }
+   float k_factor = 1;
    
-   return final_state;
+   if ( input_file_name.Contains("ZZTo4l"))
+   {
+      k_factor = KFactor_EW_qqZZ * KFactor_QCD_qqZZ_M; // As of Moriond2016
+   }
+   else if ( input_file_name.Contains("ggTo"))
+   {
+      k_factor = KFactor_QCD_ggZZ_Nominal; // as of Moriond2016
+   }
+   return k_factor;
 }
-//=============================
+//=================================
 
 
 

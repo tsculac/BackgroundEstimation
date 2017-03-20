@@ -78,7 +78,7 @@ void OSmethod::FillFRHistos( TString input_file_data_name )
       nbytes += nb;
       
       //if ( !test_bit(CRflag, ZL) ) continue;
-      if( fabs(Z1Mass - 91.2) < 7)
+      if( fabs(Z1Mass - 91.2) < 7 && PFMET < 25.)
       {
          // Final event weight
          _k_factor = calculate_K_factor(input_file_data_name);
@@ -86,13 +86,13 @@ void OSmethod::FillFRHistos( TString input_file_data_name )
 
          if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35)
          {
-            if(fabs(LepLepId->at(2)) == 11 ) passing[_current_process][Settings::ele]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.447) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
-            else if(fabs(LepLepId->at(2)) == 13 ) passing[_current_process][Settings::mu]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.447) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
+            if(fabs(LepLepId->at(2)) == 11 ) passing[_current_process][Settings::ele]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.479) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
+            else if(fabs(LepLepId->at(2)) == 13 ) passing[_current_process][Settings::mu]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.2) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
          }
          else
          {
-            if(fabs(LepLepId->at(2)) == 11 ) failing[_current_process][Settings::ele]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.447) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
-            else if(fabs(LepLepId->at(2)) == 13 ) failing[_current_process][Settings::mu]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.447) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
+            if(fabs(LepLepId->at(2)) == 11 ) failing[_current_process][Settings::ele]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.479) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
+            else if(fabs(LepLepId->at(2)) == 13 ) failing[_current_process][Settings::mu]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.2) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
          }
       }
    } // END events loop
@@ -129,7 +129,7 @@ void OSmethod::FillDataMCPlots( TString input_file_data_name )
       nb = fChain->GetEntry(jentry);
       nbytes += nb;
       
-      if (!(test_bit(CRflag, CRZLLos_2P2F) && test_bit(CRflag, CRZLLos_2P2F))) continue;
+      if (!(test_bit(CRflag, CRZLLos_2P2F)) && !(test_bit(CRflag, CRZLLos_3P1F))) continue;
       
       _current_final_state = FindFinalState();
       
@@ -142,7 +142,7 @@ void OSmethod::FillDataMCPlots( TString input_file_data_name )
       _event_weight = (_lumi * 1000 * xsec * _k_factor * overallEventWeight) / gen_sum_weights;
       
       if ( test_bit(CRflag, CRZLLos_2P2F) ) histos_1D[Settings::reg2P2F][_current_process][_current_final_state][_current_category]->Fill(ZZMass, (_current_process == Settings::Data) ? 1 :  _event_weight);
-      if ( test_bit(CRflag, CRZLLos_3P1F) ) histos_1D[Settings::reg2P2F][_current_process][_current_final_state][_current_category]->Fill(ZZMass, (_current_process == Settings::Data) ? 1 :  _event_weight);
+      if ( test_bit(CRflag, CRZLLos_3P1F) ) histos_1D[Settings::reg3P1F][_current_process][_current_final_state][_current_category]->Fill(ZZMass, (_current_process == Settings::Data) ? 1 :  _event_weight);
    
    } // END events loop
    
@@ -177,8 +177,7 @@ void OSmethod::MakeHistogramsZX( TString input_file_data_name, TString  input_fi
       nb = fChain->GetEntry(jentry);
       nbytes += nb;
       
-      if ( !CRflag ) continue;
-      if ( !test_bit(CRflag, CRZLLss) ) continue;
+      if (!(test_bit(CRflag, CRZLLos_2P2F)) && !(test_bit(CRflag, CRZLLos_3P1F))) continue;
       
       _current_final_state = FindFinalState();
       
@@ -402,6 +401,153 @@ void OSmethod::GetDataMCHistos( TString file_name)
 
 //===============================================================
 
+//========================================================================================================
+void OSmethod::PlotDataMC_2P2F( TString variable_name, TString folder )
+{
+   TCanvas *c;
+   c = new TCanvas(variable_name, variable_name, 600, 600);
+   c->SetRightMargin(0.07);
+   
+   if ( GetVarLogX( variable_name) ) c->SetLogx();
+   if ( GetVarLogY( variable_name) ) c->SetLogy();
+   
+   for( int i_fs = 0; i_fs < Settings::fs4l ; i_fs++ )
+   {
+      histos_1D[Settings::reg2P2F][Settings::WZ][i_fs][Settings::inclusive]   ->SetFillColor(kMagenta);
+      histos_1D[Settings::reg2P2F][Settings::qqZZ][i_fs][Settings::inclusive] ->SetFillColor(kCyan+1);
+      histos_1D[Settings::reg2P2F][Settings::DY][i_fs][Settings::inclusive]   ->SetFillColor(kGreen-1);
+      histos_1D[Settings::reg2P2F][Settings::ttbar][i_fs][Settings::inclusive]->SetFillColor(kBlue-2);
+      
+      histos_1D[Settings::reg2P2F][Settings::WZ][i_fs][Settings::inclusive]   ->SetLineColor(kMagenta);
+      histos_1D[Settings::reg2P2F][Settings::qqZZ][i_fs][Settings::inclusive] ->SetLineColor(kCyan+1);
+      histos_1D[Settings::reg2P2F][Settings::DY][i_fs][Settings::inclusive]   ->SetLineColor(kGreen-1);
+      histos_1D[Settings::reg2P2F][Settings::ttbar][i_fs][Settings::inclusive]->SetLineColor(kBlue-2);
+      
+      histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive]->SetMarkerSize(0.8);
+      histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive]->SetMarkerStyle(20);
+      histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive]->SetBinErrorOption(TH1::kPoisson);
+      histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive]->SetLineColor(kBlack);
+      
+      THStack *stack = new THStack( "stack", "stack" );
+      stack->Add(histos_1D[Settings::reg2P2F][Settings::WZ][i_fs][Settings::inclusive]);
+      stack->Add(histos_1D[Settings::reg2P2F][Settings::qqZZ][i_fs][Settings::inclusive]);
+      stack->Add(histos_1D[Settings::reg2P2F][Settings::DY][i_fs][Settings::inclusive]);
+      stack->Add(histos_1D[Settings::reg2P2F][Settings::ttbar][i_fs][Settings::inclusive]);
+   
+      stack->Draw("HIST");
+      
+      float data_max = histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive]->GetBinContent(histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive]->GetMaximumBin());
+      float data_max_error = histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive]->GetBinErrorUp(histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive]->GetMaximumBin());
+      
+      stack->SetMinimum(1e-5);
+      stack->SetMaximum((data_max + data_max_error)*1.1);
+      
+      TString _fs_label;
+      if ( i_fs == Settings::fs4e) _fs_label = "m_{4#font[12]{e}} (GeV)";
+      if ( i_fs == Settings::fs4mu) _fs_label = "m_{4#font[12]{#mu}} (GeV)";
+      if ( i_fs == Settings::fs2e2mu) _fs_label = "m_{2#font[12]{e}2#font[12]{#mu}} (GeV)";
+      stack->GetXaxis()->SetTitle((i_fs != Settings::fs4l ) ? _fs_label : (TString)histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive]->GetXaxis()->GetTitle());
+      stack->GetXaxis()->SetTitleSize(0.04);
+      stack->GetXaxis()->SetLabelSize(0.04);
+      stack->GetYaxis()->SetTitle(histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive]->GetYaxis()->GetTitle());
+      stack->GetYaxis()->SetTitleSize(0.04);
+      stack->GetYaxis()->SetLabelSize(0.04);
+      
+      stack->GetXaxis()->SetTitleOffset(1.2);
+      stack->GetYaxis()->SetTitleOffset(1.25);
+      
+      histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive]->Draw("SAME p E1 X0");
+      
+      TLegend *legend;
+      legend  = CreateLegend_2P2F("right",histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive],histos_1D[Settings::reg2P2F][Settings::WZ][i_fs][Settings::inclusive],histos_1D[Settings::reg2P2F][Settings::qqZZ][i_fs][Settings::inclusive],histos_1D[Settings::reg2P2F][Settings::DY][i_fs][Settings::inclusive],histos_1D[Settings::reg2P2F][Settings::ttbar][i_fs][Settings::inclusive]);
+      legend->Draw();
+
+      // Draw lumi
+      CMS_lumi *lumi = new CMS_lumi;
+      lumi->set_lumi(c, _lumi, 0);
+      
+      TString _out_file_name;
+      _out_file_name = folder + "/" + variable_name + "_2P2F_" + _s_final_state.at(i_fs) + "_" + _s_category.at(Settings::inclusive);
+      SavePlots(c, _out_file_name);
+
+   }
+}
+//========================================================================================================
+
+//========================================================================================================
+void OSmethod::PlotDataMC_3P1F( TString variable_name, TString folder )
+{
+   TCanvas *c;
+   c = new TCanvas(variable_name, variable_name, 600, 600);
+   c->SetRightMargin(0.07);
+   
+   if ( GetVarLogX( variable_name) ) c->SetLogx();
+   if ( GetVarLogY( variable_name) ) c->SetLogy();
+   
+   for( int i_fs = 0; i_fs < Settings::fs4l ; i_fs++ )
+   {
+      histos_1D[Settings::reg3P1F][Settings::WZ][i_fs][Settings::inclusive]   ->SetFillColor(kMagenta);
+      histos_1D[Settings::reg3P1F][Settings::qqZZ][i_fs][Settings::inclusive] ->SetFillColor(kCyan+1);
+      histos_1D[Settings::reg3P1F][Settings::DY][i_fs][Settings::inclusive]   ->SetFillColor(kGreen-1);
+      histos_1D[Settings::reg3P1F][Settings::ttbar][i_fs][Settings::inclusive]->SetFillColor(kBlue-2);
+      
+      histos_1D[Settings::reg3P1F][Settings::WZ][i_fs][Settings::inclusive]   ->SetLineColor(kMagenta);
+      histos_1D[Settings::reg3P1F][Settings::qqZZ][i_fs][Settings::inclusive] ->SetLineColor(kCyan+1);
+      histos_1D[Settings::reg3P1F][Settings::DY][i_fs][Settings::inclusive]   ->SetLineColor(kGreen-1);
+      histos_1D[Settings::reg3P1F][Settings::ttbar][i_fs][Settings::inclusive]->SetLineColor(kBlue-2);
+      
+      histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->SetMarkerSize(0.8);
+      histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->SetMarkerStyle(20);
+      histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->SetBinErrorOption(TH1::kPoisson);
+      histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->SetLineColor(kBlack);
+      
+      THStack *stack = new THStack( "stack", "stack" );
+      stack->Add(histos_1D[Settings::reg3P1F][Settings::WZ][i_fs][Settings::inclusive]);
+      stack->Add(histos_1D[Settings::reg3P1F][Settings::qqZZ][i_fs][Settings::inclusive]);
+      stack->Add(histos_1D[Settings::reg3P1F][Settings::DY][i_fs][Settings::inclusive]);
+      stack->Add(histos_1D[Settings::reg3P1F][Settings::ttbar][i_fs][Settings::inclusive]);
+      
+      stack->Draw("HIST");
+      
+      float data_max = histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->GetBinContent(histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->GetMaximumBin());
+      float data_max_error = histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->GetBinErrorUp(histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->GetMaximumBin());
+      
+      stack->SetMinimum(1e-5);
+      stack->SetMaximum((data_max + data_max_error)*1.1);
+      
+      TString _fs_label;
+      if ( i_fs == Settings::fs4e) _fs_label = "m_{4#font[12]{e}} (GeV)";
+      if ( i_fs == Settings::fs4mu) _fs_label = "m_{4#font[12]{#mu}} (GeV)";
+      if ( i_fs == Settings::fs2e2mu) _fs_label = "m_{2#font[12]{e}2#font[12]{#mu}} (GeV)";
+      stack->GetXaxis()->SetTitle((i_fs != Settings::fs4l ) ? _fs_label : (TString)histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->GetXaxis()->GetTitle());
+      stack->GetXaxis()->SetTitleSize(0.04);
+      stack->GetXaxis()->SetLabelSize(0.04);
+      stack->GetYaxis()->SetTitle(histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->GetYaxis()->GetTitle());
+      stack->GetYaxis()->SetTitleSize(0.04);
+      stack->GetYaxis()->SetLabelSize(0.04);
+      
+      stack->GetXaxis()->SetTitleOffset(1.2);
+      stack->GetYaxis()->SetTitleOffset(1.25);
+      
+      histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->Draw("SAME p E1 X0");
+      
+      TLegend *legend;
+      legend  = CreateLegend_2P2F("right",histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::WZ][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::qqZZ][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::DY][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::ttbar][i_fs][Settings::inclusive]);
+      legend->Draw();
+      
+      // Draw lumi
+      CMS_lumi *lumi = new CMS_lumi;
+      lumi->set_lumi(c, _lumi, 0);
+      
+      TString _out_file_name;
+      _out_file_name = folder + "/" + variable_name + "_3P1F_" + _s_final_state.at(i_fs) + "_" + _s_category.at(Settings::inclusive);
+      SavePlots(c, _out_file_name);
+      
+   }
+}
+//========================================================================================================
+
+
 
 //===============================================================
 void OSmethod::SubtractWZ()
@@ -611,6 +757,74 @@ float OSmethod::calculate_K_factor(TString input_file_name)
    return k_factor;
 }
 //=================================
+
+//===================================================
+bool OSmethod::GetVarLogX ( TString variable_name )
+{
+   //=============
+   // M4l
+   //=============
+   if(variable_name == "M4l")                return bool(Plots::M4l().var_log_x);
+
+   else
+   {
+      cout << "[ERROR] Wrong variable name choosen!" << endl;
+      abort;
+      return bool(Plots::M4l().var_log_x);
+   }
+}
+//===================================================
+
+
+
+//===================================================
+bool OSmethod::GetVarLogY ( TString variable_name )
+{
+   //=============
+   // M4l
+   //=============
+   if(variable_name == "M4l")                return bool(Plots::M4l().var_log_y);
+
+   else
+   {
+      cout << "[ERROR] Wrong variable name choosen!" << endl;
+      abort;
+      return bool(Plots::M4l().var_log_y);
+   }
+}
+//===================================================
+
+//=========================================================================================================
+TLegend* OSmethod::CreateLegend_2P2F( string position, TH1F *data, TH1F *WZ,TH1F *qqZZ,TH1F *DY,TH1F *ttbar )
+{
+   TLegend *leg;
+   if(position == "right") leg = new TLegend( .64, .65, .97, .9 );
+   else if(position == "left") leg = new TLegend(.18,.65,.51,.9);
+   leg->SetFillColor(0);
+   leg->SetBorderSize(0);
+   leg->SetFillStyle(0);
+   
+   leg->AddEntry( data, "Data", "p" );
+   leg->AddEntry( WZ,"WZ","f");
+   leg->AddEntry( qqZZ, "Z#gamma*, ZZ", "f" );
+   leg->AddEntry( DY, "Z + jets", "f" );
+   leg->AddEntry( ttbar, "t#bar{t} + jets", "f" );
+   
+   return leg;
+}
+//=========================================================================================================
+
+
+//=======================================
+void OSmethod::SavePlots( TCanvas *c, TString name)
+{
+   c->SaveAs(name + ".pdf");
+   c->SaveAs(name + ".root");
+   c->SaveAs(name + ".eps");
+   gSystem->Exec("convert -density 300 -quality 100 " + name + ".eps " + name + ".png");
+}
+//=======================================
+
 
 
 

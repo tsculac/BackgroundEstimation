@@ -14,13 +14,15 @@ SRCPP = run.cpp\
 		  Settings.cpp\
 		  Category.cpp\
 		  FakeRates.cpp\
-		  Plots.cpp
+		  Plots.cpp\
+		  CMS_lumi.cpp
 INCLUDES = OSmethod.h\
 	   Tree.h\
 		  Settings.h\
 		  Category.h\
 		  FakeRates.h\
 		  Plots.h\
+		  CMS_lumi.h\
 
          
 OBJCPP = $(patsubst %.cpp,obj/%.o,$(SRCPP))

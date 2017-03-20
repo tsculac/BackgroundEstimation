@@ -31,6 +31,8 @@
 #include "FinalStates.h"
 #include "FakeRates.h"
 #include "bitops.h"
+#include "THStack.h"
+#include "CMS_lumi.h"
 
 using namespace std;
 
@@ -56,6 +58,8 @@ public:
    void SaveDataMCHistos( TString );
    void GetFRHistos( TString );
    void GetDataMCHistos( TString );
+   void PlotDataMC_2P2F( TString, TString );
+   void PlotDataMC_3P1F( TString, TString );
    void SubtractWZ( );
    void ProduceFakeRates( TString );
    void Set_pT_binning( int, float* );
@@ -70,6 +74,11 @@ private:
    int find_current_process( TString );
    int FindFinalState();
    float calculate_K_factor( TString );
+   bool GetVarLogX( TString );
+   bool GetVarLogY( TString );
+   void SavePlots( TCanvas*, TString );
+   TLegend* CreateLegend_2P2F( string , TH1F*, TH1F*,TH1F*,TH1F*,TH1F* );
+   TLegend* CreateLegend_3P1F( string , TH1F*, TH1F*,TH1F*,TH1F*,TH1F* ,TH1F*);
 
    TFile *input_file, *input_file_data;
    TFile *fOutHistos;

@@ -17,6 +17,9 @@ using namespace std;
 
 int main( int argc, char *argv[] )
 {
+   gROOT->ProcessLine(".L ./ext/setTDRStyle_cpp.so");
+   gROOT->ProcessLine("setTDRStyle();");
+   
    TString path = "Moriond_2017/";
    TString file_name = "/ZZ4lAnalysis.root";
    TString file_name_FR = "/FakeRate_SS_Moriond368.root";
@@ -52,6 +55,8 @@ int main( int argc, char *argv[] )
    
    os->MakeHistogramsZX(Data, "FakeRates_OS_Moriond17.root");
    os->GetDataMCHistos("DataMC.root");
+   os->PlotDataMC_2P2F( "M4l", "Plots" );
+   os->PlotDataMC_3P1F( "M4l", "Plots" );
    
    delete os;
 }

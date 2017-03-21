@@ -719,6 +719,8 @@ void OSmethod::PlotDataMC_3P1F( TString variable_name, TString folder )
       histos_1D[Settings::reg3P1F][Settings::DY][i_fs][Settings::inclusive]   ->SetLineColor(kGreen-1);
       histos_1D[Settings::reg3P1F][Settings::ttbar][i_fs][Settings::inclusive]->SetLineColor(kBlue-2);
       
+      h_from2P2F_3P1F[i_fs][Settings::inclusive]->SetLineColor(kRed);
+      
       histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->SetMarkerSize(0.8);
       histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->SetMarkerStyle(20);
       histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->SetBinErrorOption(TH1::kPoisson);
@@ -732,11 +734,13 @@ void OSmethod::PlotDataMC_3P1F( TString variable_name, TString folder )
       
       stack->Draw("HIST");
       
+      h_from2P2F_3P1F[i_fs][Settings::inclusive]->Draw("HIST SAME");
+      
       float data_max = histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->GetBinContent(histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->GetMaximumBin());
       float data_max_error = histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->GetBinErrorUp(histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->GetMaximumBin());
       
       stack->SetMinimum(1e-5);
-      stack->SetMaximum((data_max + data_max_error)*1.1);
+      stack->SetMaximum((data_max + data_max_error)*1.35);
       
       TString _fs_label;
       if ( i_fs == Settings::fs4e) _fs_label = "m_{4#font[12]{e}} (GeV)";
@@ -755,7 +759,7 @@ void OSmethod::PlotDataMC_3P1F( TString variable_name, TString folder )
       histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->Draw("SAME p E1 X0");
       
       TLegend *legend;
-      legend  = CreateLegend_2P2F("right",histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::WZ][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::qqZZ][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::DY][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::ttbar][i_fs][Settings::inclusive]);
+      legend  = CreateLegend_3P1F("right",histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive],h_from2P2F_3P1F[i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::WZ][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::qqZZ][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::DY][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::ttbar][i_fs][Settings::inclusive]);
       legend->Draw();
       
       // Draw lumi
@@ -846,7 +850,6 @@ void OSmethod::ProduceFakeRates( TString file_name )
       double temp_error_x = 0;
       double temp_error_NP = 0;
       double temp_error_NF = 0;
-      //cout << "i_pT_bin: " << i_pT_bin << endl;
       
       for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
       {
@@ -863,52 +866,113 @@ void OSmethod::ProduceFakeRates( TString file_name )
 //         cout << "X = " << (_pT_bins[i_pT_bin] + _pT_bins[i_pT_bin + 1])/2 << endl;
 //         cout << "error X = " << (_pT_bins[i_pT_bin + 1] - _pT_bins[i_pT_bin])/2 << endl;
 //         cout << "Y = " << temp_NP/(temp_NP+temp_NF) << endl;
-//         cout << "error Y = " << sqrt((temp_error_NP/temp_NP)*(temp_error_NP/temp_NP) + (temp_error_NF/temp_NF)*(temp_error_NF/temp_NF)) << endl;
+//         cout << "error Y = " << sqrt(pow((temp_NF/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NP,2) + pow((temp_NP/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NF,2)) << endl;
          
-         vector_X[Settings::EB][i_flav].push_back((_pT_bins[i_pT_bin] + _pT_bins[i_pT_bin + 1])/2);
-         vector_Y[Settings::EB][i_flav].push_back(temp_NP/(temp_NP+temp_NF));
+         vector_X[Settings::corrected][Settings::EB][i_flav].push_back((_pT_bins[i_pT_bin] + _pT_bins[i_pT_bin + 1])/2);
+         vector_Y[Settings::corrected][Settings::EB][i_flav].push_back(temp_NP/(temp_NP+temp_NF));
          
-         vector_EX[Settings::EB][i_flav].push_back((_pT_bins[i_pT_bin + 1] - _pT_bins[i_pT_bin])/2);
-         vector_EY[Settings::EB][i_flav].push_back(sqrt((temp_error_NP/temp_NP)*(temp_error_NP/temp_NP) + (temp_error_NF/temp_NF)*(temp_error_NF/temp_NF))); // simple error, consider updating
+         vector_EX[Settings::corrected][Settings::EB][i_flav].push_back((_pT_bins[i_pT_bin + 1] - _pT_bins[i_pT_bin])/2);
+         vector_EY[Settings::corrected][Settings::EB][i_flav].push_back(sqrt(pow((temp_NF/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NP,2) + pow((temp_NP/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NF,2)));
          
          temp_NP = passing[Settings::Total][i_flav]->IntegralAndError(passing[Settings::Total][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin]),passing[Settings::Total][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin+1]) - 1, 2, 2, temp_error_NP);
          temp_NF = failing[Settings::Total][i_flav]->IntegralAndError(failing[Settings::Total][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin]),failing[Settings::Total][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin+1]) - 1, 2, 2, temp_error_NF);
          
-         vector_X[Settings::EE][i_flav].push_back((_pT_bins[i_pT_bin] + _pT_bins[i_pT_bin + 1])/2);
-         vector_Y[Settings::EE][i_flav].push_back(temp_NP/(temp_NP+temp_NF));
+         vector_X[Settings::corrected][Settings::EE][i_flav].push_back((_pT_bins[i_pT_bin] + _pT_bins[i_pT_bin + 1])/2);
+         vector_Y[Settings::corrected][Settings::EE][i_flav].push_back(temp_NP/(temp_NP+temp_NF));
          
-         vector_EX[Settings::EE][i_flav].push_back((_pT_bins[i_pT_bin + 1] - _pT_bins[i_pT_bin])/2);
-         vector_EY[Settings::EE][i_flav].push_back(sqrt((temp_error_NP/temp_NP)*(temp_error_NP/temp_NP) + (temp_error_NF/temp_NF)*(temp_error_NF/temp_NF))); // simple error, consider updating
+         vector_EX[Settings::corrected][Settings::EE][i_flav].push_back((_pT_bins[i_pT_bin + 1] - _pT_bins[i_pT_bin])/2);
+         vector_EY[Settings::corrected][Settings::EE][i_flav].push_back(sqrt(pow((temp_NF/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NP,2) + pow((temp_NP/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NF,2)));
+         
+         // Just for fake rate plots calculate the same for histograms without WZ subtraction
+         temp_NP = passing[Settings::Data][i_flav]->IntegralAndError(passing[Settings::Data][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin]),passing[Settings::Data][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin+1]) - 1, 1, 1, temp_error_NP);
+         temp_NF = failing[Settings::Data][i_flav]->IntegralAndError(failing[Settings::Data][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin]),failing[Settings::Data][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin+1]) - 1, 1, 1, temp_error_NF);
+         
+         //         cout << "========================================" << endl;
+         //         cout << "pT bin = " << _pT_bins[i_pT_bin] << endl;
+         //         cout << "NP = " << temp_NP << endl;
+         //         cout << "error NP = " << temp_error_NP << endl;
+         //         cout << "NF = " << temp_NF << endl;
+         //         cout << "error NF = " << temp_error_NF << endl;
+         //         cout << "X = " << (_pT_bins[i_pT_bin] + _pT_bins[i_pT_bin + 1])/2 << endl;
+         //         cout << "error X = " << (_pT_bins[i_pT_bin + 1] - _pT_bins[i_pT_bin])/2 << endl;
+         //         cout << "Y = " << temp_NP/(temp_NP+temp_NF) << endl;
+         //         cout << "error Y = " << sqrt(pow((temp_NF/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NP,2) + pow((temp_NP/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NF,2)) << endl;
+         
+         vector_X[Settings::uncorrected][Settings::EB][i_flav].push_back((_pT_bins[i_pT_bin] + _pT_bins[i_pT_bin + 1])/2);
+         vector_Y[Settings::uncorrected][Settings::EB][i_flav].push_back(temp_NP/(temp_NP+temp_NF));
+         
+         vector_EX[Settings::uncorrected][Settings::EB][i_flav].push_back((_pT_bins[i_pT_bin + 1] - _pT_bins[i_pT_bin])/2);
+         vector_EY[Settings::uncorrected][Settings::EB][i_flav].push_back(sqrt(pow((temp_NF/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NP,2) + pow((temp_NP/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NF,2)));
+         
+         temp_NP = passing[Settings::Data][i_flav]->IntegralAndError(passing[Settings::Data][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin]),passing[Settings::Data][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin+1]) - 1, 2, 2, temp_error_NP);
+         temp_NF = failing[Settings::Data][i_flav]->IntegralAndError(failing[Settings::Data][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin]),failing[Settings::Data][i_flav]->GetXaxis()->FindBin(_pT_bins[i_pT_bin+1]) - 1, 2, 2, temp_error_NF);
+         
+         vector_X[Settings::uncorrected][Settings::EE][i_flav].push_back((_pT_bins[i_pT_bin] + _pT_bins[i_pT_bin + 1])/2);
+         vector_Y[Settings::uncorrected][Settings::EE][i_flav].push_back(temp_NP/(temp_NP+temp_NF));
+         
+         vector_EX[Settings::uncorrected][Settings::EE][i_flav].push_back((_pT_bins[i_pT_bin + 1] - _pT_bins[i_pT_bin])/2);
+         vector_EY[Settings::uncorrected][Settings::EE][i_flav].push_back(sqrt(pow((temp_NF/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NP,2) + pow((temp_NP/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NF,2)));
+
       }
    }
    
-   FR_OS_electron_EB = new TGraphErrors (vector_X[Settings::EB][Settings::ele].size(),
-                                         &(vector_X[Settings::EB][Settings::ele][0]),
-                                         &(vector_Y[Settings::EB][Settings::ele][0]),
-                                         &(vector_EX[Settings::EB][Settings::ele][0]),
-                                         &(vector_EY[Settings::EB][Settings::ele][0]));
+   FR_OS_electron_EB = new TGraphErrors (vector_X[Settings::corrected][Settings::EB][Settings::ele].size(),
+                                         &(vector_X[Settings::corrected][Settings::EB][Settings::ele][0]),
+                                         &(vector_Y[Settings::corrected][Settings::EB][Settings::ele][0]),
+                                         &(vector_EX[Settings::corrected][Settings::EB][Settings::ele][0]),
+                                         &(vector_EY[Settings::corrected][Settings::EB][Settings::ele][0]));
    FR_OS_electron_EB->SetName("FR_OS_electron_EB");
    
-   FR_OS_electron_EE = new TGraphErrors (vector_X[Settings::EE][Settings::ele].size(),
-                                         &(vector_X[Settings::EE][Settings::ele][0]),
-                                         &(vector_Y[Settings::EE][Settings::ele][0]),
-                                         &(vector_EX[Settings::EE][Settings::ele][0]),
-                                         &(vector_EY[Settings::EE][Settings::ele][0]));
+   FR_OS_electron_EE = new TGraphErrors (vector_X[Settings::corrected][Settings::EE][Settings::ele].size(),
+                                         &(vector_X[Settings::corrected][Settings::EE][Settings::ele][0]),
+                                         &(vector_Y[Settings::corrected][Settings::EE][Settings::ele][0]),
+                                         &(vector_EX[Settings::corrected][Settings::EE][Settings::ele][0]),
+                                         &(vector_EY[Settings::corrected][Settings::EE][Settings::ele][0]));
    FR_OS_electron_EE->SetName("FR_OS_electron_EE");
    
-   FR_OS_muon_EB = new TGraphErrors (vector_X[Settings::EB][Settings::mu].size(),
-                                     &(vector_X[Settings::EB][Settings::mu][0]),
-                                     &(vector_Y[Settings::EB][Settings::mu][0]),
-                                     &(vector_EX[Settings::EB][Settings::mu][0]),
-                                     &(vector_EY[Settings::EB][Settings::mu][0]));
+   FR_OS_muon_EB = new TGraphErrors (vector_X[Settings::corrected][Settings::EB][Settings::mu].size(),
+                                     &(vector_X[Settings::corrected][Settings::EB][Settings::mu][0]),
+                                     &(vector_Y[Settings::corrected][Settings::EB][Settings::mu][0]),
+                                     &(vector_EX[Settings::corrected][Settings::EB][Settings::mu][0]),
+                                     &(vector_EY[Settings::corrected][Settings::EB][Settings::mu][0]));
    FR_OS_muon_EB->SetName("FR_OS_muon_EB");
    
-   FR_OS_muon_EE = new TGraphErrors (vector_X[Settings::EE][Settings::mu].size(),
-                                     &(vector_X[Settings::EE][Settings::mu][0]),
-                                     &(vector_Y[Settings::EE][Settings::mu][0]),
-                                     &(vector_EX[Settings::EE][Settings::mu][0]),
-                                     &(vector_EY[Settings::EE][Settings::mu][0]));
+   FR_OS_muon_EE = new TGraphErrors (vector_X[Settings::corrected][Settings::EE][Settings::mu].size(),
+                                     &(vector_X[Settings::corrected][Settings::EE][Settings::mu][0]),
+                                     &(vector_Y[Settings::corrected][Settings::EE][Settings::mu][0]),
+                                     &(vector_EX[Settings::corrected][Settings::EE][Settings::mu][0]),
+                                     &(vector_EY[Settings::corrected][Settings::EE][Settings::mu][0]));
    FR_OS_muon_EE->SetName("FR_OS_muon_EE");
+   
+   FR_OS_electron_EB_unc = new TGraphErrors (vector_X[Settings::uncorrected][Settings::EB][Settings::ele].size(),
+                                         &(vector_X[Settings::uncorrected][Settings::EB][Settings::ele][0]),
+                                         &(vector_Y[Settings::uncorrected][Settings::EB][Settings::ele][0]),
+                                         &(vector_EX[Settings::uncorrected][Settings::EB][Settings::ele][0]),
+                                         &(vector_EY[Settings::uncorrected][Settings::EB][Settings::ele][0]));
+   FR_OS_electron_EB_unc->SetName("FR_OS_electron_EB_unc");
+   
+   FR_OS_electron_EE_unc = new TGraphErrors (vector_X[Settings::uncorrected][Settings::EE][Settings::ele].size(),
+                                         &(vector_X[Settings::uncorrected][Settings::EE][Settings::ele][0]),
+                                         &(vector_Y[Settings::uncorrected][Settings::EE][Settings::ele][0]),
+                                         &(vector_EX[Settings::uncorrected][Settings::EE][Settings::ele][0]),
+                                         &(vector_EY[Settings::uncorrected][Settings::EE][Settings::ele][0]));
+   FR_OS_electron_EE_unc->SetName("FR_OS_electron_EE_unc");
+   
+   FR_OS_muon_EB_unc = new TGraphErrors (vector_X[Settings::uncorrected][Settings::EB][Settings::mu].size(),
+                                     &(vector_X[Settings::uncorrected][Settings::EB][Settings::mu][0]),
+                                     &(vector_Y[Settings::uncorrected][Settings::EB][Settings::mu][0]),
+                                     &(vector_EX[Settings::uncorrected][Settings::EB][Settings::mu][0]),
+                                     &(vector_EY[Settings::uncorrected][Settings::EB][Settings::mu][0]));
+   FR_OS_muon_EB_unc->SetName("FR_OS_muon_EB_unc");
+   
+   FR_OS_muon_EE_unc = new TGraphErrors (vector_X[Settings::uncorrected][Settings::EE][Settings::mu].size(),
+                                     &(vector_X[Settings::uncorrected][Settings::EE][Settings::mu][0]),
+                                     &(vector_Y[Settings::uncorrected][Settings::EE][Settings::mu][0]),
+                                     &(vector_EX[Settings::uncorrected][Settings::EE][Settings::mu][0]),
+                                     &(vector_EY[Settings::uncorrected][Settings::EE][Settings::mu][0]));
+   FR_OS_muon_EE_unc->SetName("FR_OS_muon_EE_unc");
+   
+   PlotFR();
    
    TFile* fOutHistos = new TFile(file_name, "recreate");
    fOutHistos->cd();
@@ -925,6 +989,79 @@ void OSmethod::ProduceFakeRates( TString file_name )
 }
 //===============================================================
 
+//===============================================================
+void OSmethod::PlotFR()
+{
+   TCanvas *c_ele, *c_mu;
+   c_ele = new TCanvas("FR_ele", "FR_ele", 600, 600);
+   c_mu  = new TCanvas("FR_mu", "FR_mu", 600, 600);
+   
+   mg_electrons = new TMultiGraph();
+   mg_muons = new TMultiGraph();
+   
+   mg_electrons->Add(FR_OS_electron_EB);
+   FR_OS_electron_EB->SetLineColor(kBlue);
+   FR_OS_electron_EB->SetLineStyle(2);
+   FR_OS_electron_EB->SetMarkerSize(0);
+   FR_OS_electron_EB->SetTitle("barel corrected");
+   mg_electrons->Add(FR_OS_electron_EE);
+   FR_OS_electron_EE->SetLineColor(kRed);
+   FR_OS_electron_EE->SetLineStyle(2);
+   FR_OS_electron_EE->SetMarkerSize(0);
+   FR_OS_electron_EE->SetTitle("endcap corrected");
+   mg_electrons->Add(FR_OS_electron_EB_unc);
+   FR_OS_electron_EB_unc->SetLineColor(kBlue);
+   FR_OS_electron_EB_unc->SetLineStyle(1);
+   FR_OS_electron_EB_unc->SetMarkerSize(0);
+   FR_OS_electron_EB_unc->SetTitle("barel uncorrected");
+   mg_electrons->Add(FR_OS_electron_EE_unc);
+   FR_OS_electron_EE_unc->SetLineColor(kRed);
+   FR_OS_electron_EE_unc->SetLineStyle(1);
+   FR_OS_electron_EE_unc->SetMarkerSize(0);
+   FR_OS_electron_EE_unc->SetTitle("endcap uncorrected");
+   
+   mg_muons->Add(FR_OS_muon_EB);
+   FR_OS_muon_EB->SetLineColor(kBlue);
+   FR_OS_muon_EB->SetLineStyle(2);
+   FR_OS_muon_EB->SetMarkerSize(0);
+   FR_OS_muon_EB->SetTitle("barel corrected");
+   mg_muons->Add(FR_OS_muon_EE);
+   FR_OS_muon_EE->SetLineColor(kRed);
+   FR_OS_muon_EE->SetLineStyle(2);
+   FR_OS_muon_EE->SetMarkerSize(0);
+   FR_OS_muon_EE->SetTitle("endcap corrected");
+   mg_muons->Add(FR_OS_muon_EB_unc);
+   FR_OS_muon_EB_unc->SetLineColor(kBlue);
+   FR_OS_muon_EB_unc->SetLineStyle(1);
+   FR_OS_muon_EB_unc->SetMarkerSize(0);
+   FR_OS_muon_EB_unc->SetTitle("barel uncorrected");
+   mg_muons->Add(FR_OS_muon_EE_unc);
+   FR_OS_muon_EE_unc->SetLineColor(kRed);
+   FR_OS_muon_EE_unc->SetLineStyle(1);
+   FR_OS_muon_EE_unc->SetMarkerSize(0);
+   FR_OS_muon_EE_unc->SetTitle("endcap uncorrected");
+   
+   
+   gStyle->SetEndErrorSize(0);
+   
+   TLegend *leg_ele,*leg_mu;
+
+   c_ele->cd();
+   mg_electrons->Draw("AP");
+   mg_electrons->SetMaximum(0.35);
+   leg_ele = CreateLegend_FR("left",FR_OS_electron_EB_unc,FR_OS_electron_EB,FR_OS_electron_EE_unc,FR_OS_electron_EE);
+   leg_ele->Draw();
+   SavePlots(c_ele, "Plots/FR_electrons");
+   
+   c_mu->cd();
+   mg_muons->Draw("AP");
+   mg_muons->SetMaximum(0.35);
+   leg_mu = CreateLegend_FR("left",FR_OS_muon_EB_unc,FR_OS_muon_EB,FR_OS_muon_EE_unc,FR_OS_muon_EE);
+   leg_mu->Draw();
+   SavePlots(c_mu, "Plots/FR_muons");
+   
+}
+//===============================================================
 
 //===============================================================
 void OSmethod::RemoveNegativeBins(TH2F *h)
@@ -1068,6 +1205,22 @@ bool OSmethod::GetVarLogY ( TString variable_name )
 //===================================================
 
 //=========================================================================================================
+TLegend* OSmethod::CreateLegend_FR( string position, TGraphErrors *EB_unc, TGraphErrors *EB_cor,TGraphErrors *EE_unc,TGraphErrors *EE_cor )
+{
+   TLegend *leg;
+   if(position == "right") leg = new TLegend( .64, .65, .97, .9 );
+   else if(position == "left") leg = new TLegend(.18,.65,.51,.9);
+   
+   leg->AddEntry( EB_unc, "barrel uncorrected", "l" );
+   leg->AddEntry( EB_cor, "barrel corrected","l");
+   leg->AddEntry( EE_unc, "endcap uncorrected", "l" );
+   leg->AddEntry( EE_cor, "endcap corrected", "l" );
+   
+   return leg;
+}
+//=========================================================================================================
+
+//=========================================================================================================
 TLegend* OSmethod::CreateLegend_2P2F( string position, TH1F *data, TH1F *WZ,TH1F *qqZZ,TH1F *DY,TH1F *ttbar )
 {
    TLegend *leg;
@@ -1086,6 +1239,28 @@ TLegend* OSmethod::CreateLegend_2P2F( string position, TH1F *data, TH1F *WZ,TH1F
    return leg;
 }
 //=========================================================================================================
+
+//=========================================================================================================
+TLegend* OSmethod::CreateLegend_3P1F( string position, TH1F *data, TH1F *h_2P2F, TH1F *WZ,TH1F *qqZZ,TH1F *DY,TH1F *ttbar )
+{
+   TLegend *leg;
+   if(position == "right") leg = new TLegend( .64, .65, .97, .9 );
+   else if(position == "left") leg = new TLegend(.18,.65,.51,.9);
+   leg->SetFillColor(0);
+   leg->SetBorderSize(0);
+   leg->SetFillStyle(0);
+   
+   leg->AddEntry( data, "Data", "p" );
+   leg->AddEntry( h_2P2F, "2P2F extr.", "l" );
+   leg->AddEntry( WZ,"WZ","f");
+   leg->AddEntry( qqZZ, "Z#gamma*, ZZ", "f" );
+   leg->AddEntry( DY, "Z + jets", "f" );
+   leg->AddEntry( ttbar, "t#bar{t} + jets", "f" );
+   
+   return leg;
+}
+//=========================================================================================================
+
 
 
 //=======================================

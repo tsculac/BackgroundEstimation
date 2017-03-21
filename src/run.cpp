@@ -36,32 +36,51 @@ int main( int argc, char *argv[] )
 
    os->SetLumi(35.9);
    
+   ///////////////////////////////////
+   // Fill control histos           //
+   ///////////////////////////////////
    os->FillDataMCPlots(Data);
    os->FillDataMCPlots(WZ);
    os->FillDataMCPlots(ZZ);
    os->FillDataMCPlots(ttbar);
    os->FillDataMCPlots(DY);
-   
    os->SaveDataMCHistos("DataMC.root");
 
+   ///////////////////////////////////
+   // Fill passing/failling histos  //
+   ///////////////////////////////////
    os->FillFRHistos(Data);
    os->FillFRHistos(WZ);
    os->SubtractWZ();
    os->SaveFRHistos("Histos.root", true);
    
+   ///////////////////////////////////
+   // Calculate fake rates          //
+   ///////////////////////////////////
    os->GetFRHistos("Histos.root");
    os->Set_pT_binning(8, pT_bins);
    os->ProduceFakeRates("FakeRates_OS_Moriond17.root");
-   
+
+   ///////////////////////////////////
+   // Fill ZX contributions histos  //
+   ///////////////////////////////////
    os->MakeHistogramsZX(Data, "FakeRates_OS_Moriond17.root");
    os->MakeZXMCContribution(ZZ, "FakeRates_OS_Moriond17.root");
    os->SaveZXHistos("ZXHistos.root");
-   os->GetZXHistos("ZXHistos.root");
-   os->PlotZXContributions("Plots");
    
+   ///////////////////////////////////
+   // Plot control plots            //
+   ///////////////////////////////////
+   os->GetZXHistos("ZXHistos.root");
    os->GetDataMCHistos("DataMC.root");
    os->PlotDataMC_2P2F( "M4l", "Plots" );
    os->PlotDataMC_3P1F( "M4l", "Plots" );
+   
+   ///////////////////////////////////
+   // Plot Z+X plots                //
+   ///////////////////////////////////
+   os->GetZXHistos("ZXHistos.root");
+   os->PlotZXContributions("Plots");
    
    delete os;
 }

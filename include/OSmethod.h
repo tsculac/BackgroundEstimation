@@ -20,6 +20,7 @@
 #include "TH2F.h"
 #include "TLegend.h"
 #include "TGraphErrors.h"
+#include "TMultiGraph.h"
 #include "TROOT.h"
 #include "TSystem.h"
 
@@ -42,6 +43,7 @@ const int num_of_final_states      = Settings::num_of_final_states;
 const int num_of_categories        = Settings::num_of_categories;
 const int num_of_regions           = Settings::num_of_regions;
 const int num_of_eta_bins          = Settings::num_of_eta_bins;
+const int num_of_fake_rates        = Settings::num_of_fake_rates;
 
 class OSmethod: public Tree
 {
@@ -83,6 +85,8 @@ private:
    bool GetVarLogX( TString );
    bool GetVarLogY( TString );
    void SavePlots( TCanvas*, TString );
+   void PlotFR();
+   TLegend* CreateLegend_FR( string , TGraphErrors*, TGraphErrors*,TGraphErrors*,TGraphErrors* );
    TLegend* CreateLegend_2P2F( string , TH1F*, TH1F*,TH1F*,TH1F*,TH1F* );
    TLegend* CreateLegend_3P1F( string , TH1F*, TH1F*,TH1F*,TH1F*,TH1F* ,TH1F*);
 
@@ -123,11 +127,13 @@ private:
    TH2F *passing[num_of_processes][num_of_flavours], *failing[num_of_processes][num_of_flavours];
    
    TGraphErrors *FR_OS_electron_EB, *FR_OS_electron_EE, *FR_OS_muon_EB, *FR_OS_muon_EE;
+   TGraphErrors *FR_OS_electron_EB_unc, *FR_OS_electron_EE_unc, *FR_OS_muon_EB_unc, *FR_OS_muon_EE_unc;
+   TMultiGraph *mg_electrons, *mg_muons;
    
-   vector<Float_t> vector_X[num_of_eta_bins][num_of_flavours];
-   vector<Float_t> vector_Y[num_of_eta_bins][num_of_flavours];
-   vector<Float_t> vector_EX[num_of_eta_bins][num_of_flavours];
-   vector<Float_t> vector_EY[num_of_eta_bins][num_of_flavours];
+   vector<Float_t> vector_X[num_of_fake_rates][num_of_eta_bins][num_of_flavours];
+   vector<Float_t> vector_Y[num_of_fake_rates][num_of_eta_bins][num_of_flavours];
+   vector<Float_t> vector_EX[num_of_fake_rates][num_of_eta_bins][num_of_flavours];
+   vector<Float_t> vector_EY[num_of_fake_rates][num_of_eta_bins][num_of_flavours];
    
 };
 #endif

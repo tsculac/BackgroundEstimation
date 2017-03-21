@@ -34,7 +34,7 @@ int main( int argc, char *argv[] )
 
    OSmethod *os = new OSmethod();
 
-   os->SetLumi(36.8);
+   os->SetLumi(35.9);
    
    os->FillDataMCPlots(Data);
    os->FillDataMCPlots(WZ);
@@ -54,6 +54,11 @@ int main( int argc, char *argv[] )
    os->ProduceFakeRates("FakeRates_OS_Moriond17.root");
    
    os->MakeHistogramsZX(Data, "FakeRates_OS_Moriond17.root");
+   os->MakeZXMCContribution(ZZ, "FakeRates_OS_Moriond17.root");
+   os->SaveZXHistos("ZXHistos.root");
+   os->GetZXHistos("ZXHistos.root");
+   os->PlotZXContributions("Plots");
+   
    os->GetDataMCHistos("DataMC.root");
    os->PlotDataMC_2P2F( "M4l", "Plots" );
    os->PlotDataMC_3P1F( "M4l", "Plots" );

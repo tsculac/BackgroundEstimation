@@ -54,12 +54,16 @@ public:
    void FillFRHistos( TString );
    void FillDataMCPlots( TString );
    void MakeHistogramsZX( TString, TString );
+   void MakeZXMCContribution( TString, TString );
    void SaveFRHistos( TString, bool );
    void SaveDataMCHistos( TString );
+   void SaveZXHistos( TString );
    void GetFRHistos( TString );
    void GetDataMCHistos( TString );
+   void GetZXHistos( TString );
    void PlotDataMC_2P2F( TString, TString );
    void PlotDataMC_3P1F( TString, TString );
+   void PlotZXContributions( TString );
    void SubtractWZ( );
    void ProduceFakeRates( TString );
    void Set_pT_binning( int, float* );
@@ -69,8 +73,10 @@ private:
    
    void DeclareFRHistos();
    void DeclareDataMCHistos();
+   void DeclareZXHistos();
    void RemoveNegativeBins( TH2F* );
    void FillDataMCInclusive();
+   void FillZXInclusive();
    int find_current_process( TString );
    int FindFinalState();
    float calculate_K_factor( TString );
@@ -102,10 +108,18 @@ private:
    
    int _current_process, _current_final_state, _current_category, _n_pT_bins;
    float _lumi, _yield_SR, _k_factor;
-   double gen_sum_weights, _event_weight;
+   double gen_sum_weights, _event_weight, _f3, _f4;
    vector< vector <float> > _expected_yield_SR, _number_of_events_CR;
 
    TH1F *histos_1D[num_of_regions][num_of_processes][num_of_final_states][num_of_categories];
+   
+   TH1F *histos_ZX[num_of_final_states][num_of_categories];
+   TH1F *h_from2P2F_SR[num_of_final_states][num_of_categories];
+   TH1F *h_from2P2F_3P1F[num_of_final_states][num_of_categories];
+   TH1F *h_from3P1F_SR_final[num_of_final_states][num_of_categories];
+   TH1F *h_from3P1F_SR[num_of_final_states][num_of_categories];
+   TH1F *h_from3P1F_SR_ZZonly[num_of_final_states][num_of_categories];
+   
    TH2F *passing[num_of_processes][num_of_flavours], *failing[num_of_processes][num_of_flavours];
    
    TGraphErrors *FR_OS_electron_EB, *FR_OS_electron_EE, *FR_OS_muon_EB, *FR_OS_muon_EE;

@@ -67,7 +67,7 @@ int main( int argc, char *argv[] )
    os->MakeHistogramsZX(Data, "FakeRates_OS_Moriond17.root");
    os->MakeZXMCContribution(ZZ, "FakeRates_OS_Moriond17.root");
    os->SaveZXHistos("ZXHistos.root");
-   
+
    ///////////////////////////////////
    // Plot control plots            //
    ///////////////////////////////////

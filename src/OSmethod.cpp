@@ -191,12 +191,18 @@ void OSmethod::MakeHistogramsZX( TString input_file_data_name, TString  input_fi
       {
          _f3 = FR->GetFakeRate(LepPt->at(2),LepEta->at(2),LepLepId->at(2));
          _f4 = FR->GetFakeRate(LepPt->at(3),LepEta->at(3),LepLepId->at(3));
+//         cout << "===============" << endl;
+//         cout << "f3 = " << _f3 << endl;
+//         cout << "f4 = " << _f4 << endl;
+//         cout << "weight = " << (_f3/(1-_f3))*(_f4/(1-_f4)) << endl;
          h_from2P2F_SR[_current_final_state][_current_category]->Fill(ZZMass, (_f3/(1-_f3))*(_f4/(1-_f4)) );
          h_from2P2F_3P1F[_current_final_state][_current_category]->Fill(ZZMass, (_f3/(1-_f3))+(_f4/(1-_f4)) );
       }
       if ( test_bit(CRflag, CRZLLos_3P1F) )
       {
-         _f4 = FR->GetFakeRate(LepPt->at(3),LepEta->at(3),LepLepId->at(3)); // Check if the fake is always last !!!
+         if(LepisID->at(3) && LepCombRelIsoPF->at(3) < 0.35) _f4 = FR->GetFakeRate(LepPt->at(3),LepEta->at(3),LepLepId->at(3));
+         else _f4 = FR->GetFakeRate(LepPt->at(2),LepEta->at(2),LepLepId->at(2));
+         
          h_from3P1F_SR[_current_final_state][_current_category]->Fill(ZZMass,_f4/(1-_f4) );
       }
       
@@ -246,7 +252,8 @@ void OSmethod::MakeZXMCContribution( TString input_file_data_name, TString  inpu
       _k_factor = calculate_K_factor(input_file_data_name);
       _event_weight = (_lumi * 1000 * xsec * _k_factor * overallEventWeight) / gen_sum_weights;
       
-      _f4 = FR->GetFakeRate(LepPt->at(3),LepEta->at(3),LepLepId->at(3)); // Check if the fake is always last !!!
+      if(LepisID->at(3) && LepCombRelIsoPF->at(3) < 0.35) _f4 = FR->GetFakeRate(LepPt->at(3),LepEta->at(3),LepLepId->at(3));
+      else _f4 = FR->GetFakeRate(LepPt->at(2),LepEta->at(2),LepLepId->at(2));
 
       h_from3P1F_SR_ZZonly[_current_final_state][_current_category]->Fill(ZZMass, _event_weight * (_f4/(1-_f4)) );
       
@@ -358,11 +365,11 @@ void OSmethod::SaveFRHistos( TString file_name,  bool remove_negative_bins)
    {
       for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
       {
-         RemoveNegativeBins( passing[Settings::Total][i_flav] );
-         RemoveNegativeBins( passing[Settings::Total][i_flav] );
+         RemoveNegativeBins2D( passing[Settings::Total][i_flav] );
+         RemoveNegativeBins2D( passing[Settings::Total][i_flav] );
          
-         RemoveNegativeBins( failing[Settings::Total][i_flav] );
-         RemoveNegativeBins( failing[Settings::Total][i_flav] );
+         RemoveNegativeBins2D( failing[Settings::Total][i_flav] );
+         RemoveNegativeBins2D( failing[Settings::Total][i_flav] );
       }
       cout << "[INFO] Negative bins removed." << endl;
    }
@@ -627,8 +634,7 @@ void OSmethod::GetZXHistos( TString file_name)
 void OSmethod::PlotDataMC_2P2F( TString variable_name, TString folder )
 {
    TCanvas *c;
-   c = new TCanvas(variable_name, variable_name, 600, 600);
-   c->SetRightMargin(0.07);
+   c = new TCanvas("2P2F", variable_name, 600, 600);
    
    if ( GetVarLogX( variable_name) ) c->SetLogx();
    if ( GetVarLogY( variable_name) ) c->SetLogy();
@@ -668,7 +674,8 @@ void OSmethod::PlotDataMC_2P2F( TString variable_name, TString folder )
       if ( i_fs == Settings::fs4e) _fs_label = "m_{4#font[12]{e}} (GeV)";
       if ( i_fs == Settings::fs4mu) _fs_label = "m_{4#font[12]{#mu}} (GeV)";
       if ( i_fs == Settings::fs2e2mu) _fs_label = "m_{2#font[12]{e}2#font[12]{#mu}} (GeV)";
-      stack->GetXaxis()->SetTitle((i_fs != Settings::fs4l ) ? _fs_label : (TString)histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive]->GetXaxis()->GetTitle());
+      if ( i_fs == Settings::fs2mu2e) _fs_label = "m_{2#font[12]{#mu}2#font[12]{e}} (GeV)";
+      stack->GetXaxis()->SetTitle(_fs_label);
       stack->GetXaxis()->SetTitleSize(0.04);
       stack->GetXaxis()->SetLabelSize(0.04);
       stack->GetYaxis()->SetTitle(histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive]->GetYaxis()->GetTitle());
@@ -701,8 +708,7 @@ void OSmethod::PlotDataMC_2P2F( TString variable_name, TString folder )
 void OSmethod::PlotDataMC_3P1F( TString variable_name, TString folder )
 {
    TCanvas *c;
-   c = new TCanvas(variable_name, variable_name, 600, 600);
-   c->SetRightMargin(0.07);
+   c = new TCanvas("3P2F", variable_name, 600, 600);
    
    if ( GetVarLogX( variable_name) ) c->SetLogx();
    if ( GetVarLogY( variable_name) ) c->SetLogy();
@@ -746,7 +752,8 @@ void OSmethod::PlotDataMC_3P1F( TString variable_name, TString folder )
       if ( i_fs == Settings::fs4e) _fs_label = "m_{4#font[12]{e}} (GeV)";
       if ( i_fs == Settings::fs4mu) _fs_label = "m_{4#font[12]{#mu}} (GeV)";
       if ( i_fs == Settings::fs2e2mu) _fs_label = "m_{2#font[12]{e}2#font[12]{#mu}} (GeV)";
-      stack->GetXaxis()->SetTitle((i_fs != Settings::fs4l ) ? _fs_label : (TString)histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->GetXaxis()->GetTitle());
+      if ( i_fs == Settings::fs2mu2e) _fs_label = "m_{2#font[12]{#mu}2#font[12]{e}} (GeV)";
+      stack->GetXaxis()->SetTitle(_fs_label);
       stack->GetXaxis()->SetTitleSize(0.04);
       stack->GetXaxis()->SetLabelSize(0.04);
       stack->GetYaxis()->SetTitle(histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->GetYaxis()->GetTitle());
@@ -779,7 +786,6 @@ void OSmethod::PlotZXContributions( TString folder )
 {
    TCanvas *c;
    c = new TCanvas("c", "c", 600, 600);
-   c->SetRightMargin(0.07);
    
    for( int i_fs = 0; i_fs < Settings::fs4l ; i_fs++ )
    {
@@ -788,6 +794,8 @@ void OSmethod::PlotZXContributions( TString folder )
       h_from3P1F_SR_final[i_fs][Settings::inclusive] ->SetLineColor(kBlack);
       h_from3P1F_SR_ZZonly[i_fs][Settings::inclusive]->SetLineColor(kRed);
       histos_ZX[i_fs][Settings::inclusive]           ->SetLineColor(kGreen);
+      
+      h_from3P1F_SR[i_fs][Settings::inclusive]->SetMinimum(-1); // For visualisation of negative bins
       
       h_from3P1F_SR[i_fs][Settings::inclusive]       ->Draw("HIST");
       h_from2P2F_SR[i_fs][Settings::inclusive]       ->Draw("HIST SAME");
@@ -799,7 +807,8 @@ void OSmethod::PlotZXContributions( TString folder )
       if ( i_fs == Settings::fs4e) _fs_label = "m_{4#font[12]{e}} (GeV)";
       if ( i_fs == Settings::fs4mu) _fs_label = "m_{4#font[12]{#mu}} (GeV)";
       if ( i_fs == Settings::fs2e2mu) _fs_label = "m_{2#font[12]{e}2#font[12]{#mu}} (GeV)";
-      h_from2P2F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetTitle((i_fs != Settings::fs4l ) ? _fs_label : (TString)h_from2P2F_SR[i_fs][Settings::inclusive]->GetXaxis()->GetTitle());
+            if ( i_fs == Settings::fs2mu2e) _fs_label = "m_{2#font[12]{#mu}2#font[12]{e}} (GeV)";
+      h_from2P2F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetTitle(_fs_label);
       h_from2P2F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetTitleSize(0.04);
       h_from2P2F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetLabelSize(0.04);
       h_from2P2F_SR[i_fs][Settings::inclusive]->GetYaxis()->SetTitle(h_from2P2F_SR[i_fs][Settings::inclusive]->GetYaxis()->GetTitle());
@@ -809,9 +818,9 @@ void OSmethod::PlotZXContributions( TString folder )
       h_from2P2F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetTitleOffset(1.2);
       h_from2P2F_SR[i_fs][Settings::inclusive]->GetYaxis()->SetTitleOffset(1.25);
       
-      //      TLegend *legend;
-      //      legend  = CreateLegend_2P2F("right",histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::WZ][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::qqZZ][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::DY][i_fs][Settings::inclusive],histos_1D[Settings::reg3P1F][Settings::ttbar][i_fs][Settings::inclusive]);
-      //      legend->Draw();
+      TLegend *legend;
+      legend  = CreateLegend_ZXcontr( "right", h_from2P2F_SR[i_fs][Settings::inclusive], h_from3P1F_SR[i_fs][Settings::inclusive],h_from3P1F_SR_ZZonly[i_fs][Settings::inclusive],h_from3P1F_SR_final[i_fs][Settings::inclusive],histos_ZX[i_fs][Settings::inclusive] );
+      legend->Draw();
       
       // Draw lumi
       CMS_lumi *lumi = new CMS_lumi;
@@ -1064,11 +1073,22 @@ void OSmethod::PlotFR()
 //===============================================================
 
 //===============================================================
-void OSmethod::RemoveNegativeBins(TH2F *h)
+void OSmethod::RemoveNegativeBins1D(TH1F *h)
 {
-   for (int i_bin_x = 1; i_bin_x <= 80; i_bin_x++)
+   for (int i_bin_x = 1; i_bin_x <= h->GetXaxis()->GetNbins(); i_bin_x++)
    {
-      for (int i_bin_y = 1; i_bin_y <= 2; i_bin_y++)
+      if( h->GetBinContent(i_bin_x) < 0.) h->SetBinContent(i_bin_x, 0);
+   }
+   
+}
+//===============================================================
+
+//===============================================================
+void OSmethod::RemoveNegativeBins2D(TH2F *h)
+{
+   for (int i_bin_x = 1; i_bin_x <= h->GetXaxis()->GetNbins(); i_bin_x++)
+   {
+      for (int i_bin_y = 1; i_bin_y <= h->GetYaxis()->GetNbins(); i_bin_y++)
       {
          if( h->GetBinContent(i_bin_x,i_bin_y) < 0.) h->SetBinContent(i_bin_x,i_bin_y,0);
       }
@@ -1215,6 +1235,23 @@ TLegend* OSmethod::CreateLegend_FR( string position, TGraphErrors *EB_unc, TGrap
    leg->AddEntry( EB_cor, "barrel corrected","l");
    leg->AddEntry( EE_unc, "endcap uncorrected", "l" );
    leg->AddEntry( EE_cor, "endcap corrected", "l" );
+   
+   return leg;
+}
+//=========================================================================================================
+
+//=========================================================================================================
+TLegend* OSmethod::CreateLegend_ZXcontr( string position, TH1F *h_2P2F_SR, TH1F *h_3P1F_SR,TH1F *h_3P1F_ZZ,TH1F *h_3P1F_SR_final,TH1F *total )
+{
+   TLegend *leg;
+   if(position == "right") leg = new TLegend( .64, .65, .97, .9 );
+   else if(position == "left") leg = new TLegend(.18,.65,.51,.9);
+   
+   leg->AddEntry( h_2P2F_SR, "2P2F", "l" );
+   leg->AddEntry( h_3P1F_SR, "3P1F w/o removal","l");
+   leg->AddEntry( h_3P1F_ZZ, "3P1F ZZ contr.", "l" );
+   leg->AddEntry( h_3P1F_SR_final, "3P1F final", "l" );
+   leg->AddEntry( total, "Z+X final", "l" );
    
    return leg;
 }

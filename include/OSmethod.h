@@ -76,7 +76,8 @@ private:
    void DeclareFRHistos();
    void DeclareDataMCHistos();
    void DeclareZXHistos();
-   void RemoveNegativeBins( TH2F* );
+   void RemoveNegativeBins1D( TH1F* );
+   void RemoveNegativeBins2D( TH2F* );
    void FillDataMCInclusive();
    void FillZXInclusive();
    int find_current_process( TString );
@@ -87,6 +88,7 @@ private:
    void SavePlots( TCanvas*, TString );
    void PlotFR();
    TLegend* CreateLegend_FR( string , TGraphErrors*, TGraphErrors*,TGraphErrors*,TGraphErrors* );
+   TLegend* CreateLegend_ZXcontr( string , TH1F*, TH1F*,TH1F*,TH1F*,TH1F* );
    TLegend* CreateLegend_2P2F( string , TH1F*, TH1F*,TH1F*,TH1F*,TH1F* );
    TLegend* CreateLegend_3P1F( string , TH1F*, TH1F*,TH1F*,TH1F*,TH1F* ,TH1F*);
 

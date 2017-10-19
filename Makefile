@@ -8,7 +8,7 @@ EXTLIBS = ./ext/cConstants_cc.so ./ext/FinalStates_cc.so ./ext/bitops_cc.so ./ex
 
 VPATH = ./src/ ./include/
 
-SRCPP = run.cpp\
+SRCPP_OS = run_OS.cpp\
         OSmethod.cpp\
 		  Tree.cpp\
 		  Settings.cpp\
@@ -16,7 +16,18 @@ SRCPP = run.cpp\
 		  FakeRates.cpp\
 		  Plots.cpp\
 		  CMS_lumi.cpp
+
+SRCPP_SS = run_SS.cpp\
+        SSmethod.cpp\
+		  Tree.cpp\
+		  Settings.cpp\
+		  Category.cpp\
+		  FakeRates.cpp\
+		  Plots.cpp\
+		  CMS_lumi.cpp
+
 INCLUDES = OSmethod.h\
+	   SSmethod.h\
 	   Tree.h\
 		  Settings.h\
 		  Category.h\
@@ -25,16 +36,21 @@ INCLUDES = OSmethod.h\
 		  CMS_lumi.h\
 
          
-OBJCPP = $(patsubst %.cpp,obj/%.o,$(SRCPP))
+OBJCPP_OS = $(patsubst %.cpp,obj/%.o,$(SRCPP_OS))
+OBJCPP_SS = $(patsubst %.cpp,obj/%.o,$(SRCPP_SS))
 
-all : run
+all : run_OS run_SS
 
 obj/%.o: %.cpp $(INCLUDES)
 	@echo ">> compiling $*"
 	@mkdir -p obj/
 	@$(CXX) -c $< ${CXXFLAGS} -o $@
 
-run : $(OBJCPP)
+run_OS : $(OBJCPP_OS)
+	@echo ">> linking..."
+	@$(CXX) $^ $(EXTLIBS) ${LDFLAGS} ${CXXFLAGS}  -o $@
+
+run_SS : $(OBJCPP_SS)
 	@echo ">> linking..."
 	@$(CXX) $^ $(EXTLIBS) ${LDFLAGS} ${CXXFLAGS}  -o $@
 

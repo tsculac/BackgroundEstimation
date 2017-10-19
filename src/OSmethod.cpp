@@ -18,8 +18,8 @@ OSmethod::OSmethod():Tree()
    _s_flavour.push_back("ele");
    _s_flavour.push_back("mu");
    
-   _s_final_state.push_back("4e");
    _s_final_state.push_back("4mu");
+   _s_final_state.push_back("4e");
    _s_final_state.push_back("2e2mu");
    _s_final_state.push_back("2mu2e");
    _s_final_state.push_back("4l");
@@ -61,7 +61,7 @@ void OSmethod::FillFRHistos( TString input_file_data_name )
    gen_sum_weights = (Long64_t)hCounters->GetBinContent(40);
    
    input_tree_data = (TTree*)input_file_data->Get("CRZLTree/candTree");
-   Init( input_tree_data, input_file_data_name , true);
+   Init( input_tree_data, input_file_data_name , false);
    
    _current_process = find_current_process(input_file_data_name);
    
@@ -70,6 +70,15 @@ void OSmethod::FillFRHistos( TString input_file_data_name )
    Long64_t nentries = fChain->GetEntriesFast();
 
    Long64_t nbytes = 0, nb = 0;
+	
+	// Define some counters for control print out
+	Int_t _total_events = 0;
+	Int_t _failZ1MassCut = 0;
+	Int_t _failLepPtCut = 0;
+	Int_t _failSIPCut = 0;
+	Int_t _failMETCut = 0;
+	Int_t _passingSelection = 0;
+	Int_t _faillingSelection = 0;
 
    for (Long64_t jentry=0; jentry<nentries;jentry++)
    {
@@ -77,9 +86,15 @@ void OSmethod::FillFRHistos( TString input_file_data_name )
       if (ientry < 0) break;
       nb = fChain->GetEntry(jentry);
       nbytes += nb;
-      
-      //if ( !test_bit(CRflag, ZL) ) continue;
-      if( fabs(Z1Mass - 91.2) < 7 && PFMET < 25.)
+	   
+      _total_events++;
+	   
+      if ( abs(Z1Mass - 91.2) > 7. ) {_failZ1MassCut++; continue;}
+      if ( (LepPt->at(0) > LepPt->at(1)) && (LepPt->at(0) < 20. || LepPt->at(1) < 10.) ) {_failLepPtCut++; continue;}
+      if ( (LepPt->at(1) > LepPt->at(0)) && (LepPt->at(1) < 20. || LepPt->at(0) < 10.) ) {_failLepPtCut++; continue;}
+      if ( LepSIP->at(2) > 4.) {_failSIPCut++; continue;}
+      if ( PFMET > 25. ) {_failMETCut++; continue;}
+      else
       {
          // Final event weight
          _k_factor = calculate_K_factor(input_file_data_name);
@@ -87,16 +102,37 @@ void OSmethod::FillFRHistos( TString input_file_data_name )
 
          if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35)
          {
+		    _passingSelection++;
             if(fabs(LepLepId->at(2)) == 11 ) passing[_current_process][Settings::ele]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.479) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
             else if(fabs(LepLepId->at(2)) == 13 ) passing[_current_process][Settings::mu]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.2) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
          }
          else
          {
+		    _faillingSelection++;
             if(fabs(LepLepId->at(2)) == 11 ) failing[_current_process][Settings::ele]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.479) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
             else if(fabs(LepLepId->at(2)) == 13 ) failing[_current_process][Settings::mu]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.2) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
          }
       }
    } // END events loop
+	
+	// Print Z + X expected yields for inclusive category
+	if( _current_process == Settings::Data)
+	{
+		cout << endl;
+		cout << "========================================================================================" << endl;
+		cout << "[INFO] Control printout for Z+L control region." << endl;
+		cout << "========================================================================================" << endl;
+		cout << "[INFO] Total number of events in Z+L control region = " << _total_events << endl;
+		cout << "[INFO] Events lost after  abs(Z1 - Z) < 7 GeV cut  = " << _failZ1MassCut << endl;
+		cout << "[INFO] Events lost after LepPt > 20,10 GeV cut  = " << _failLepPtCut << endl;
+		cout << "[INFO] Events lost after SIP < 4 cut  = " << _failSIPCut << endl;
+		cout << "[INFO] Events lost after MET < 25 cut  = " << _failMETCut << endl;
+		cout << "[INFO] Total events left = " << _passingSelection + _faillingSelection << endl;
+		cout << "[INFO] Passing selection = " << _passingSelection  << endl;
+		cout << "[INFO] Failling selection = " << _faillingSelection << endl;
+		cout << "========================================================================================" << endl;
+		cout << endl;
+	}
    
    cout << "[INFO] Processing of " << input_file_data_name << " done." << endl;
 }
@@ -134,6 +170,16 @@ void OSmethod::FillDataMCPlots( TString input_file_data_name )
       
       _current_final_state = FindFinalState();
       
+      for ( int j = 0; j < nCleanedJetsPt30; j++)
+      {
+         jetPt[j] = JetPt->at(j);
+         jetEta[j] = JetEta->at(j);
+         jetPhi[j] = JetPhi->at(j);
+         jetMass[j] = JetMass->at(j);
+         jetQGL[j] = JetQGLikelihood->at(j);
+         jetPgOverPq[j] = 1./JetQGLikelihood->at(j) - 1.;
+      }
+      
       _current_category = categoryMor17(nExtraLep, nExtraZ, nCleanedJetsPt30, nCleanedJetsPt30BTagged_bTagSF, jetQGL,
                                         p_JJQCD_SIG_ghg2_1_JHUGen_JECNominal, p_JQCD_SIG_ghg2_1_JHUGen_JECNominal, p_JJVBF_SIG_ghv1_1_JHUGen_JECNominal,
                                         p_JVBF_SIG_ghv1_1_JHUGen_JECNominal, pAux_JVBF_SIG_ghv1_1_JHUGen_JECNominal, p_HadWH_SIG_ghw1_1_JHUGen_JECNominal,
@@ -161,7 +207,7 @@ void OSmethod::MakeHistogramsZX( TString input_file_data_name, TString  input_fi
    
    input_file_data = new TFile("./" + input_file_data_name);
    input_tree_data = (TTree*)input_file_data->Get("CRZLLTree/candTree");
-   Init( input_tree_data, input_file_data_name , false);
+   Init( input_tree_data, input_file_data_name , true);
    
    
    if (fChain == 0) return;
@@ -182,6 +228,16 @@ void OSmethod::MakeHistogramsZX( TString input_file_data_name, TString  input_fi
       
       _current_final_state = FindFinalState();
       
+      for ( int j = 0; j < nCleanedJetsPt30; j++)
+      {
+         jetPt[j] = JetPt->at(j);
+         jetEta[j] = JetEta->at(j);
+         jetPhi[j] = JetPhi->at(j);
+         jetMass[j] = JetMass->at(j);
+         jetQGL[j] = JetQGLikelihood->at(j);
+         jetPgOverPq[j] = 1./JetQGLikelihood->at(j) - 1.;
+      }
+      
       _current_category = categoryMor17(nExtraLep, nExtraZ, nCleanedJetsPt30, nCleanedJetsPt30BTagged_bTagSF, jetQGL,
                                         p_JJQCD_SIG_ghg2_1_JHUGen_JECNominal, p_JQCD_SIG_ghg2_1_JHUGen_JECNominal, p_JJVBF_SIG_ghv1_1_JHUGen_JECNominal,
                                         p_JVBF_SIG_ghv1_1_JHUGen_JECNominal, pAux_JVBF_SIG_ghv1_1_JHUGen_JECNominal, p_HadWH_SIG_ghw1_1_JHUGen_JECNominal,
@@ -200,8 +256,8 @@ void OSmethod::MakeHistogramsZX( TString input_file_data_name, TString  input_fi
       }
       if ( test_bit(CRflag, CRZLLos_3P1F) )
       {
-         if(LepisID->at(3) && LepCombRelIsoPF->at(3) < 0.35) _f4 = FR->GetFakeRate(LepPt->at(3),LepEta->at(3),LepLepId->at(3));
-         else _f4 = FR->GetFakeRate(LepPt->at(2),LepEta->at(2),LepLepId->at(2));
+         if(LepisID->at(3) && LepCombRelIsoPF->at(3) < 0.35) _f4 = FR->GetFakeRate(LepPt->at(2),LepEta->at(2),LepLepId->at(2));
+         else _f4 = FR->GetFakeRate(LepPt->at(3),LepEta->at(3),LepLepId->at(3));
          
          h_from3P1F_SR[_current_final_state][_current_category]->Fill(ZZMass,_f4/(1-_f4) );
       }
@@ -223,7 +279,7 @@ void OSmethod::MakeZXMCContribution( TString input_file_data_name, TString  inpu
    gen_sum_weights = (Long64_t)hCounters->GetBinContent(40);
    
    input_tree_data = (TTree*)input_file_data->Get("CRZLLTree/candTree");
-   Init( input_tree_data, input_file_data_name , false);
+   Init( input_tree_data, input_file_data_name , true);
    
    
    if (fChain == 0) return;
@@ -244,6 +300,16 @@ void OSmethod::MakeZXMCContribution( TString input_file_data_name, TString  inpu
       
       _current_final_state = FindFinalState();
       
+      for ( int j = 0; j < nCleanedJetsPt30; j++)
+      {
+         jetPt[j] = JetPt->at(j);
+         jetEta[j] = JetEta->at(j);
+         jetPhi[j] = JetPhi->at(j);
+         jetMass[j] = JetMass->at(j);
+         jetQGL[j] = JetQGLikelihood->at(j);
+         jetPgOverPq[j] = 1./JetQGLikelihood->at(j) - 1.;
+      }
+      
       _current_category = categoryMor17(nExtraLep, nExtraZ, nCleanedJetsPt30, nCleanedJetsPt30BTagged_bTagSF, jetQGL,
                                         p_JJQCD_SIG_ghg2_1_JHUGen_JECNominal, p_JQCD_SIG_ghg2_1_JHUGen_JECNominal, p_JJVBF_SIG_ghv1_1_JHUGen_JECNominal,
                                         p_JVBF_SIG_ghv1_1_JHUGen_JECNominal, pAux_JVBF_SIG_ghv1_1_JHUGen_JECNominal, p_HadWH_SIG_ghw1_1_JHUGen_JECNominal,
@@ -252,8 +318,8 @@ void OSmethod::MakeZXMCContribution( TString input_file_data_name, TString  inpu
       _k_factor = calculate_K_factor(input_file_data_name);
       _event_weight = (_lumi * 1000 * xsec * _k_factor * overallEventWeight) / gen_sum_weights;
       
-      if(LepisID->at(3) && LepCombRelIsoPF->at(3) < 0.35) _f4 = FR->GetFakeRate(LepPt->at(3),LepEta->at(3),LepLepId->at(3));
-      else _f4 = FR->GetFakeRate(LepPt->at(2),LepEta->at(2),LepLepId->at(2));
+      if(LepisID->at(3) && LepCombRelIsoPF->at(3) < 0.35) _f4 = FR->GetFakeRate(LepPt->at(2),LepEta->at(2),LepLepId->at(2));
+      else _f4 = FR->GetFakeRate(LepPt->at(3),LepEta->at(3),LepLepId->at(3));
 
       h_from3P1F_SR_ZZonly[_current_final_state][_current_category]->Fill(ZZMass, _event_weight * (_f4/(1-_f4)) );
       
@@ -294,7 +360,7 @@ void OSmethod::DeclareFRHistos()
 //===============================================================
 void OSmethod::DeclareDataMCHistos()
 {
-   for (int i_reg = 0; i_reg < num_of_regions; i_reg ++)
+   for (int i_reg = 0; i_reg < num_of_regions_os; i_reg ++)
    {
       for (int i_proc = 0; i_proc < Settings::Total; i_proc++)
       {
@@ -349,7 +415,7 @@ void OSmethod::DeclareZXHistos()
 //===============================================================
 
 //===============================================================
-void OSmethod::SaveFRHistos( TString file_name,  bool remove_negative_bins)
+void OSmethod::SaveFRHistos( TString file_name,  bool subtractWZ, bool remove_negative_bins)
 {
    TFile* fOutHistos = new TFile(file_name, "recreate");
    fOutHistos->cd();
@@ -361,14 +427,13 @@ void OSmethod::SaveFRHistos( TString file_name,  bool remove_negative_bins)
       failing[Settings::Total][i_flav]->Add(failing[Settings::Data][i_flav], 1.);
    }
    
+   if (subtractWZ ) SubtractWZ(); // Subtract WZ contribution from MC estimate
+   
    if ( remove_negative_bins ) // Set negative bins to zero
    {
       for (int i_flav = 0; i_flav < num_of_flavours; i_flav++)
       {
          RemoveNegativeBins2D( passing[Settings::Total][i_flav] );
-         RemoveNegativeBins2D( passing[Settings::Total][i_flav] );
-         
-         RemoveNegativeBins2D( failing[Settings::Total][i_flav] );
          RemoveNegativeBins2D( failing[Settings::Total][i_flav] );
       }
       cout << "[INFO] Negative bins removed." << endl;
@@ -402,7 +467,7 @@ void OSmethod::SaveDataMCHistos( TString file_name )
    TFile* fOutHistos = new TFile(file_name, "recreate");
    fOutHistos->cd();
    
-   for (int i_reg = 0; i_reg < num_of_regions; i_reg ++)
+   for (int i_reg = 0; i_reg < num_of_regions_os; i_reg ++)
    {
       for (int i_proc = 0; i_proc < Settings::Total; i_proc++)
       {
@@ -426,7 +491,7 @@ void OSmethod::SaveDataMCHistos( TString file_name )
 //===============================================================
 void OSmethod::FillDataMCInclusive( )
 {
-   for (int i_reg = 0; i_reg < num_of_regions; i_reg ++)
+   for (int i_reg = 0; i_reg < num_of_regions_os; i_reg ++)
    {
       for (int i_proc = 0; i_proc < Settings::Total; i_proc++)
       {
@@ -441,7 +506,7 @@ void OSmethod::FillDataMCInclusive( )
       }
    }
    
-   for (int i_reg = 0; i_reg < num_of_regions; i_reg ++)
+   for (int i_reg = 0; i_reg < num_of_regions_os; i_reg ++)
    {
       for (int i_proc = 0; i_proc < Settings::Total; i_proc++)
       {
@@ -457,9 +522,9 @@ void OSmethod::FillDataMCInclusive( )
 //===============================================================
 
 //===============================================================
-void OSmethod::SaveZXHistos( TString file_name )
+void OSmethod::SaveZXHistos( TString file_name , bool remove_negative_bins)
 {
-   FillZXInclusive();
+   FillZXInclusive(remove_negative_bins);
    
    TFile* fOutHistos = new TFile(file_name, "recreate");
    fOutHistos->cd();
@@ -485,7 +550,7 @@ void OSmethod::SaveZXHistos( TString file_name )
 //===============================================================
 
 //===============================================================
-void OSmethod::FillZXInclusive( )
+void OSmethod::FillZXInclusive( bool remove_negative_bins )
 {
    for (int i_fs = 0; i_fs < Settings::fs4l; i_fs++)
    {
@@ -536,6 +601,17 @@ void OSmethod::FillZXInclusive( )
          histos_ZX[i_fs][i_cat]->Add(h_from2P2F_SR[i_fs][i_cat], 1.);
       }
    }
+	
+  if ( remove_negative_bins )
+	{
+		for (int i_fs = 0; i_fs <= Settings::fs4l; i_fs++)
+		{
+			for (int i_cat = 0; i_cat <= Settings::inclusive; i_cat++)
+			{
+				RemoveNegativeBins1D(histos_ZX[i_fs][i_cat]);
+			}
+		}
+	}
    
 
    
@@ -576,7 +652,7 @@ void OSmethod::GetDataMCHistos( TString file_name)
 {
    TFile* histo_file = TFile::Open(file_name);
    
-   for (int i_reg = 0; i_reg < num_of_regions; i_reg ++)
+   for (int i_reg = 0; i_reg < num_of_regions_os; i_reg ++)
    {
       for (int i_proc = 0; i_proc < Settings::Total; i_proc++)
       {
@@ -696,7 +772,7 @@ void OSmethod::PlotDataMC_2P2F( TString variable_name, TString folder )
       lumi->set_lumi(c, _lumi, 0);
       
       TString _out_file_name;
-      _out_file_name = folder + "/" + variable_name + "_2P2F_" + _s_final_state.at(i_fs) + "_" + _s_category.at(Settings::inclusive);
+      _out_file_name = folder + "/" + variable_name + "_OS_2P2F_" + _s_final_state.at(i_fs) + "_" + _s_category.at(Settings::inclusive);
       SavePlots(c, _out_file_name);
 
    }
@@ -774,7 +850,7 @@ void OSmethod::PlotDataMC_3P1F( TString variable_name, TString folder )
       lumi->set_lumi(c, _lumi, 0);
       
       TString _out_file_name;
-      _out_file_name = folder + "/" + variable_name + "_3P1F_" + _s_final_state.at(i_fs) + "_" + _s_category.at(Settings::inclusive);
+      _out_file_name = folder + "/" + variable_name + "_OS_3P1F_" + _s_final_state.at(i_fs) + "_" + _s_category.at(Settings::inclusive);
       SavePlots(c, _out_file_name);
       
    }
@@ -784,11 +860,14 @@ void OSmethod::PlotDataMC_3P1F( TString variable_name, TString folder )
 //========================================================================================================
 void OSmethod::PlotZXContributions( TString folder )
 {
-   TCanvas *c;
-   c = new TCanvas("c", "c", 600, 600);
+   TCanvas *c, *c_zx;
+   c    = new TCanvas("c", "c", 600, 600);
+   c_zx = new TCanvas("c_zx", "c_zx", 600, 600);
    
-   for( int i_fs = 0; i_fs < Settings::fs4l ; i_fs++ )
+   for( int i_fs = 0; i_fs <= Settings::fs4l ; i_fs++ )
    {
+      c->cd();
+      
       h_from3P1F_SR[i_fs][Settings::inclusive]       ->SetLineColor(kBlue);
       h_from2P2F_SR[i_fs][Settings::inclusive]       ->SetLineColor(kYellow);
       h_from3P1F_SR_final[i_fs][Settings::inclusive] ->SetLineColor(kBlack);
@@ -807,16 +886,16 @@ void OSmethod::PlotZXContributions( TString folder )
       if ( i_fs == Settings::fs4e) _fs_label = "m_{4#font[12]{e}} (GeV)";
       if ( i_fs == Settings::fs4mu) _fs_label = "m_{4#font[12]{#mu}} (GeV)";
       if ( i_fs == Settings::fs2e2mu) _fs_label = "m_{2#font[12]{e}2#font[12]{#mu}} (GeV)";
-            if ( i_fs == Settings::fs2mu2e) _fs_label = "m_{2#font[12]{#mu}2#font[12]{e}} (GeV)";
-      h_from2P2F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetTitle(_fs_label);
-      h_from2P2F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetTitleSize(0.04);
-      h_from2P2F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetLabelSize(0.04);
-      h_from2P2F_SR[i_fs][Settings::inclusive]->GetYaxis()->SetTitle(h_from2P2F_SR[i_fs][Settings::inclusive]->GetYaxis()->GetTitle());
-      h_from2P2F_SR[i_fs][Settings::inclusive]->GetYaxis()->SetTitleSize(0.04);
-      h_from2P2F_SR[i_fs][Settings::inclusive]->GetYaxis()->SetLabelSize(0.04);
+      if ( i_fs == Settings::fs2mu2e) _fs_label = "m_{2#font[12]{#mu}2#font[12]{e}} (GeV)";
+      h_from3P1F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetTitle(_fs_label);
+      h_from3P1F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetTitleSize(0.04);
+      h_from3P1F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetLabelSize(0.04);
+      h_from3P1F_SR[i_fs][Settings::inclusive]->GetYaxis()->SetTitle(h_from2P2F_SR[i_fs][Settings::inclusive]->GetYaxis()->GetTitle());
+      h_from3P1F_SR[i_fs][Settings::inclusive]->GetYaxis()->SetTitleSize(0.04);
+      h_from3P1F_SR[i_fs][Settings::inclusive]->GetYaxis()->SetLabelSize(0.04);
       
-      h_from2P2F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetTitleOffset(1.2);
-      h_from2P2F_SR[i_fs][Settings::inclusive]->GetYaxis()->SetTitleOffset(1.25);
+      h_from3P1F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetTitleOffset(1.2);
+      h_from3P1F_SR[i_fs][Settings::inclusive]->GetYaxis()->SetTitleOffset(1.25);
       
       TLegend *legend;
       legend  = CreateLegend_ZXcontr( "right", h_from2P2F_SR[i_fs][Settings::inclusive], h_from3P1F_SR[i_fs][Settings::inclusive],h_from3P1F_SR_ZZonly[i_fs][Settings::inclusive],h_from3P1F_SR_final[i_fs][Settings::inclusive],histos_ZX[i_fs][Settings::inclusive] );
@@ -827,9 +906,17 @@ void OSmethod::PlotZXContributions( TString folder )
       lumi->set_lumi(c, _lumi, 0);
       
       TString _out_file_name;
-      _out_file_name = folder + "/" + "ZX_Contributions_" + _s_final_state.at(i_fs) + "_" + _s_category.at(Settings::inclusive);
+      _out_file_name = folder + "/" + "ZX_Contributions_OS_" + _s_final_state.at(i_fs) + "_" + _s_category.at(Settings::inclusive);
       SavePlots(c, _out_file_name);
       
+      c_zx->cd();
+      histos_ZX[i_fs][Settings::inclusive]->SetLineColor(420);
+      histos_ZX[i_fs][Settings::inclusive]->SetFillColor(411);
+      histos_ZX[i_fs][Settings::inclusive]->Draw("HIST");
+      lumi->set_lumi(c_zx, _lumi, 0);
+      
+      _out_file_name = folder + "/" + "ZX_OS_" + _s_final_state.at(i_fs) + "_" + _s_category.at(Settings::inclusive);
+      SavePlots(c_zx, _out_file_name);
    }
 }
 //========================================================================================================
@@ -1060,14 +1147,14 @@ void OSmethod::PlotFR()
    mg_electrons->SetMaximum(0.35);
    leg_ele = CreateLegend_FR("left",FR_OS_electron_EB_unc,FR_OS_electron_EB,FR_OS_electron_EE_unc,FR_OS_electron_EE);
    leg_ele->Draw();
-   SavePlots(c_ele, "Plots/FR_electrons");
+   SavePlots(c_ele, "Plots/FR_OS_electrons");
    
    c_mu->cd();
    mg_muons->Draw("AP");
    mg_muons->SetMaximum(0.35);
    leg_mu = CreateLegend_FR("left",FR_OS_muon_EB_unc,FR_OS_muon_EB,FR_OS_muon_EE_unc,FR_OS_muon_EE);
    leg_mu->Draw();
-   SavePlots(c_mu, "Plots/FR_muons");
+   SavePlots(c_mu, "Plots/FR_OS_muons");
    
 }
 //===============================================================

@@ -112,3 +112,4 @@ extern "C" float DZHh_ME_QG(
    float GOverQ = TMath::Power( jetPgOverPq(jetQGLikelihood[0],jetPhi[0]) * jetPgOverPq(jetQGLikelihood[1],jetPhi[1]) , 1./3. );
    return 1./(1.+ (1./DZHhME - 1.) * GOverQ);
 }
+

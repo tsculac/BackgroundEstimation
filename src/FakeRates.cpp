@@ -11,10 +11,22 @@ FakeRates::FakeRates( TString input_file_FR_name )
    input_file_FR = new TFile("./" + input_file_FR_name);
 
    // for Toni OS FR files
-   g_FR_mu_EB = (TGraph*)input_file_FR->Get("FR_OS_muon_EB");
-   g_FR_mu_EE = (TGraph*)input_file_FR->Get("FR_OS_muon_EE");
-   g_FR_e_EB  = (TGraph*)input_file_FR->Get("FR_OS_electron_EB");
-   g_FR_e_EE  = (TGraph*)input_file_FR->Get("FR_OS_electron_EE");
+   if (input_file_FR_name.Contains("OS"))
+   {
+      g_FR_mu_EB = (TGraph*)input_file_FR->Get("FR_OS_muon_EB");
+      g_FR_mu_EE = (TGraph*)input_file_FR->Get("FR_OS_muon_EE");
+      g_FR_e_EB  = (TGraph*)input_file_FR->Get("FR_OS_electron_EB");
+      g_FR_e_EE  = (TGraph*)input_file_FR->Get("FR_OS_electron_EE");
+   }
+   
+   // for Christophe's FR files
+   if (input_file_FR_name.Contains("SS"))
+   {
+      g_FR_mu_EB = (TGraph*)input_file_FR->Get("FR_SS_muon_EB");
+      g_FR_mu_EE = (TGraph*)input_file_FR->Get("FR_SS_muon_EE");
+      g_FR_e_EB  = (TGraph*)input_file_FR->Get("FR_SS_electron_EB");
+      g_FR_e_EE  = (TGraph*)input_file_FR->Get("FR_SS_electron_EE");
+   }
 
 }
 //===============================================

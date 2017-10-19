@@ -40,7 +40,9 @@ public:
 
    enum _eta_bins { EB = 0, EE = 1, MAX_NUM_OF_ETA_BINS};
    
-   enum _regions { reg2P2F = 0 , reg3P1F = 1, MAX_NUM_OF_REGIONS};
+   enum _regions_OS { reg2P2F = 0 , reg3P1F = 1, MAX_NUM_OF_REGIONS_OS};
+   
+   enum _regions_SS { regZLL = 0, MAX_NUM_OF_REGIONS_SS};
    
    enum _fake_rates { corrected = 0 , uncorrected = 1, MAX_NUM_OF_FAKE_RATES};
    
@@ -49,7 +51,8 @@ public:
    static const int num_of_final_states      = MAX_NUM_OF_FINAL_STATES;
    static const int num_of_categories        = MAX_NUM_OF_CATEGORIES;
    static const int num_of_eta_bins          = MAX_NUM_OF_ETA_BINS;
-   static const int num_of_regions           = MAX_NUM_OF_REGIONS;
+   static const int num_of_regions_os        = MAX_NUM_OF_REGIONS_OS;
+   static const int num_of_regions_ss        = MAX_NUM_OF_REGIONS_SS;
    static const int num_of_fake_rates        = MAX_NUM_OF_FAKE_RATES;
 
    private:

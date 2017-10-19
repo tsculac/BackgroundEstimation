@@ -3,6 +3,7 @@
 #include "./include/Discriminants.h"
 
 #include <cmath>
+#include <iostream>
 
 #include "TMath.h"
 #include "TRandom3.h"

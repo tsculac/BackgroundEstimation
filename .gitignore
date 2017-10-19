@@ -18,6 +18,11 @@
 *.txt
 
 # Directories
+/Plots
+
+# Run files
+run_SS
+run_OS
 
 # Scripts
 */*.sh

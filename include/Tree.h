@@ -897,7 +897,7 @@ public :
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
    virtual Long64_t LoadTree(Long64_t entry);
-   virtual void     Init(TTree *tree, TString input_file_name, bool ZLregion);
+   virtual void     Init(TTree *tree, TString input_file_name, bool notZLregion);
    virtual void     Loop();
    virtual Bool_t   Notify();
    virtual void     Show(Long64_t entry = -1);
@@ -935,7 +935,7 @@ Long64_t Tree::LoadTree(Long64_t entry)
    return centry;
 }
 
-void Tree::Init(TTree *tree, TString input_file_name, bool ZLregion)
+void Tree::Init(TTree *tree, TString input_file_name, bool notZLregion)
 {
    // The Init() function is called when the selector needs to initialize
    // a new tree or chain. Typically here the branch addresses and branch
@@ -1047,7 +1047,7 @@ void Tree::Init(TTree *tree, TString input_file_name, bool ZLregion)
    fChain->SetBranchAddress("fsrPhi", &fsrPhi, &b_fsrPhi);
    fChain->SetBranchAddress("fsrLept", &fsrLept, &b_fsrLept);
    fChain->SetBranchAddress("passIsoPreFSR", &passIsoPreFSR, &b_passIsoPreFSR);
-   if(!ZLregion)
+   if(notZLregion)
    {
       fChain->SetBranchAddress("p_GG_SIG_ghg2_1_ghz1_1_JHUGen", &p_GG_SIG_ghg2_1_ghz1_1_JHUGen, &b_p_GG_SIG_ghg2_1_ghz1_1_JHUGen);
       fChain->SetBranchAddress("p_GG_SIG_ghg2_1_ghz1prime2_1E4_JHUGen", &p_GG_SIG_ghg2_1_ghz1prime2_1E4_JHUGen, &b_p_GG_SIG_ghg2_1_ghz1prime2_1E4_JHUGen);

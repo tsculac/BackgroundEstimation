@@ -1119,7 +1119,7 @@ void SSmethod::Fit_FRnMH_graphs(TGraphErrors *FR_MissingHits_graph[99][99])
 			Ele_FR_correction_function[i_eta][i_pt]->SetParameter(0,1.);
 			Ele_FR_correction_function[i_eta][i_pt]->SetParameter(1,0.);
 			
-			FR_MissingHits_graph[i_eta][i_pt]->Fit(Ele_FR_correction_function[i_eta][i_pt]);
+			FR_MissingHits_graph[i_eta][i_pt]->Fit(Ele_FR_correction_function[i_eta][i_pt], "Q");
 			
 			TString graph_name;
 			graph_name.Form("FR_MissingHits_graph_eta_%d_pT_%d",i_eta,i_pt);
@@ -1206,24 +1206,27 @@ void SSmethod::Correct_Final_FR( TString input_file_data_name)
 	
 	for ( int i_pt = 0; i_pt < _n_pT_bins-2; i_pt++)
 	{
+		Float_t sigma_avgMH = 0;
 		_avg_MissingHits_ZLL[Settings::EB][i_pt] = _N_MissingHits_ZLL[Settings::EB][i_pt]/(_N_Passing_ZLL[Settings::EB][i_pt] + _N_Failling_ZLL[Settings::EB][i_pt]);
+		sigma_avgMH = sqrt(pow((1./pow(_N_Failling_ZLL[Settings::EB][i_pt]+_N_Passing_ZLL[Settings::EB][i_pt],2)),2)*_N_MissingHits_ZLL[Settings::EB][i_pt] + pow((_N_MissingHits_ZLL[Settings::EB][i_pt]/pow(_N_Failling_ZLL[Settings::EB][i_pt]+_N_Passing_ZLL[Settings::EB][i_pt],2)),2)*(_N_Failling_ZLL[Settings::EB][i_pt]+_N_Passing_ZLL[Settings::EB][i_pt]));
 		//cout << "avg_Missing_Hits EB = " << _avg_MissingHits_ZLL[Settings::EB][i_pt ] << endl;
 		
 		vector_X[Settings::corrected][Settings::EB][Settings::ele][i_pt] = ((_pT_bins[i_pt + 1] + _pT_bins[i_pt + 2])/2);
 		vector_Y[Settings::corrected][Settings::EB][Settings::ele][i_pt] = (Ele_FR_correction_function[Settings::EB][i_pt]->Eval(_avg_MissingHits_ZLL[Settings::EB][i_pt]));
 		
 		vector_EX[Settings::corrected][Settings::EB][Settings::ele][i_pt] = ((_pT_bins[i_pt + 2] - _pT_bins[i_pt + 1])/2);
-		vector_EY[Settings::corrected][Settings::EB][Settings::ele][i_pt] = 0;
+		vector_EY[Settings::corrected][Settings::EB][Settings::ele][i_pt] = (Ele_FR_correction_function[Settings::EB][i_pt]->Eval(_avg_MissingHits_ZLL[Settings::EB][i_pt]) - Ele_FR_correction_function[Settings::EB][i_pt]->Eval(_avg_MissingHits_ZLL[Settings::EB][i_pt] - sigma_avgMH));
 		
 		
 		_avg_MissingHits_ZLL[Settings::EE][i_pt] = _N_MissingHits_ZLL[Settings::EE][i_pt]/(_N_Passing_ZLL[Settings::EE][i_pt] + _N_Failling_ZLL[Settings::EE][i_pt]);
+		sigma_avgMH = sqrt(pow((1./pow(_N_Failling_ZLL[Settings::EE][i_pt]+_N_Passing_ZLL[Settings::EE][i_pt],2)),2)*_N_MissingHits_ZLL[Settings::EE][i_pt] + pow((_N_MissingHits_ZLL[Settings::EE][i_pt]/pow(_N_Failling_ZLL[Settings::EE][i_pt]+_N_Passing_ZLL[Settings::EE][i_pt],2)),2)*(_N_Failling_ZLL[Settings::EE][i_pt]+_N_Passing_ZLL[Settings::EE][i_pt]));
 		//cout << "avg_Missing_Hits EE = " << _avg_MissingHits_ZLL[Settings::EE][i_pt] << endl;
 		
 		vector_X[Settings::corrected][Settings::EE][Settings::ele][i_pt] = ((_pT_bins[i_pt + 1] + _pT_bins[i_pt + 2])/2);
 		vector_Y[Settings::corrected][Settings::EE][Settings::ele][i_pt] = (Ele_FR_correction_function[Settings::EE][i_pt]->Eval(_avg_MissingHits_ZLL[Settings::EE][i_pt]));
 		
 		vector_EX[Settings::corrected][Settings::EE][Settings::ele][i_pt] = ((_pT_bins[i_pt + 2] - _pT_bins[i_pt + 1])/2);
-		vector_EY[Settings::corrected][Settings::EE][Settings::ele][i_pt] = 0;
+		vector_EY[Settings::corrected][Settings::EE][Settings::ele][i_pt] = (Ele_FR_correction_function[Settings::EE][i_pt]->Eval(_avg_MissingHits_ZLL[Settings::EE][i_pt]) - Ele_FR_correction_function[Settings::EE][i_pt]->Eval(_avg_MissingHits_ZLL[Settings::EE][i_pt] - sigma_avgMH));
 	}
 	
 }

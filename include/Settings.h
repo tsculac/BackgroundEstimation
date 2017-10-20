@@ -22,8 +22,23 @@ public:
       MAX_NUM_OF_PROCESSES
    };
    
-   enum _flavour { ele = 0, mu = 1, MAX_NUM_OF_FLAVOURS };
-   enum _final_state { fs4mu = 0, fs4e = 1, fs2e2mu = 2, fs2mu2e = 3, fs4l = 4, MAX_NUM_OF_FINAL_STATES };
+   enum _flavour
+	{
+		ele = 0,
+		mu = 1,
+		MAX_NUM_OF_FLAVOURS
+		
+	};
+	
+   enum _final_state
+	{
+		fs4mu = 0,
+		fs4e = 1,
+		fs2e2mu = 2,
+		fs2mu2e = 3,
+		fs4l = 4,
+		MAX_NUM_OF_FINAL_STATES
+	};
 
    enum _category
    {
@@ -38,14 +53,42 @@ public:
       MAX_NUM_OF_CATEGORIES
    };
 
-   enum _eta_bins { EB = 0, EE = 1, MAX_NUM_OF_ETA_BINS};
+   enum _eta_bins
+	{
+		EB = 0,
+		EE = 1,
+		MAX_NUM_OF_ETA_BINS
+	};
    
-   enum _regions_OS { reg2P2F = 0 , reg3P1F = 1, MAX_NUM_OF_REGIONS_OS};
+   enum _regions_OS
+	{
+		reg2P2F = 0 ,
+		reg3P1F = 1,
+		MAX_NUM_OF_REGIONS_OS
+	};
    
-   enum _regions_SS { regZLL = 0, MAX_NUM_OF_REGIONS_SS};
+   enum _regions_SS
+	{
+		regZLL = 0,
+		MAX_NUM_OF_REGIONS_SS
+	};
    
-   enum _fake_rates { corrected = 0 , uncorrected = 1, MAX_NUM_OF_FAKE_RATES};
-   
+   enum _fake_rates
+	{
+		corrected = 0 ,
+		uncorrected = 1,
+		MAX_NUM_OF_FAKE_RATES
+		
+	};
+	
+	enum _Z_mass_windows
+	{
+		_40_MZ1_120 = 0 ,
+		_MZ1mMZtrue_7 = 1,
+		_60_MZ1_120 = 2,
+		_MZ1EmMZtrue_5 = 3,
+		MAX_NUM_OF_Z_MASS_WINDOWS
+	};
    static const int num_of_processes         = MAX_NUM_OF_PROCESSES;
    static const int num_of_flavours          = MAX_NUM_OF_FLAVOURS;
    static const int num_of_final_states      = MAX_NUM_OF_FINAL_STATES;
@@ -54,6 +97,7 @@ public:
    static const int num_of_regions_os        = MAX_NUM_OF_REGIONS_OS;
    static const int num_of_regions_ss        = MAX_NUM_OF_REGIONS_SS;
    static const int num_of_fake_rates        = MAX_NUM_OF_FAKE_RATES;
+	static const int num_of_z_mass_windows    = MAX_NUM_OF_Z_MASS_WINDOWS;
 
    private:
       

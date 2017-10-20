@@ -62,13 +62,13 @@ int main( int argc, char *argv[] )
    ///////////////////////////////////
    ss->GetFRHistos("Histos_SS.root");
    ss->Set_pT_binning(8, pT_bins);
-   ss->ProduceFakeRates("FakeRates_SS_Moriond17.root");
+   ss->ProduceFakeRates("FakeRates_SS_Moriond17.root", Data);
 	
    ///////////////////////////////////
    // Calculate OS/SS ratios        //
    ///////////////////////////////////
    ss->Calculate_SSOS_Ratio( Data, ZZ, SubtractMCContribution);
-	
+
    ///////////////////////////////////
    // Fill ZX contributions histos  //
    ///////////////////////////////////

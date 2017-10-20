@@ -883,10 +883,11 @@ void OSmethod::PlotZXContributions( TString folder )
       histos_ZX[i_fs][Settings::inclusive]           ->Draw("HIST SAME");
       
       TString _fs_label;
-      if ( i_fs == Settings::fs4e) _fs_label = "m_{4#font[12]{e}} (GeV)";
-      if ( i_fs == Settings::fs4mu) _fs_label = "m_{4#font[12]{#mu}} (GeV)";
+      if ( i_fs == Settings::fs4e)    _fs_label = "m_{4#font[12]{e}} (GeV)";
+      if ( i_fs == Settings::fs4mu)   _fs_label = "m_{4#font[12]{#mu}} (GeV)";
       if ( i_fs == Settings::fs2e2mu) _fs_label = "m_{2#font[12]{e}2#font[12]{#mu}} (GeV)";
       if ( i_fs == Settings::fs2mu2e) _fs_label = "m_{2#font[12]{#mu}2#font[12]{e}} (GeV)";
+		if ( i_fs == Settings::fs4l)    _fs_label = "m_{4#font[12]{l}} (GeV)";
       h_from3P1F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetTitle(_fs_label);
       h_from3P1F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetTitleSize(0.04);
       h_from3P1F_SR[i_fs][Settings::inclusive]->GetXaxis()->SetLabelSize(0.04);

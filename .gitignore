@@ -19,6 +19,7 @@
 
 # Directories
 /Plots
+/Fits
 
 # Run files
 run_SS

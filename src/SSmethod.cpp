@@ -804,7 +804,7 @@ void SSmethod::GetZXHistos( TString file_name)
 
 
 //===============================================================
-void SSmethod::ProduceFakeRates( TString file_name )
+void SSmethod::ProduceFakeRates( TString file_name , TString input_file_data_name /*= "DONT_CORRECT"*/)
 {
    for(int i_pT_bin = 0; i_pT_bin < _n_pT_bins - 1; i_pT_bin++ )
    {
@@ -878,21 +878,36 @@ void SSmethod::ProduceFakeRates( TString file_name )
          
       }
    }
-   
-   FR_SS_electron_EB = new TGraphErrors (vector_X[Settings::corrected][Settings::EB][Settings::ele].size(),
-                                         &(vector_X[Settings::corrected][Settings::EB][Settings::ele][0]),
-                                         &(vector_Y[Settings::corrected][Settings::EB][Settings::ele][0]),
-                                         &(vector_EX[Settings::corrected][Settings::EB][Settings::ele][0]),
-                                         &(vector_EY[Settings::corrected][Settings::EB][Settings::ele][0]));
-   FR_SS_electron_EB->SetName("FR_SS_electron_EB");
-   
-   FR_SS_electron_EE = new TGraphErrors (vector_X[Settings::corrected][Settings::EE][Settings::ele].size(),
-                                         &(vector_X[Settings::corrected][Settings::EE][Settings::ele][0]),
-                                         &(vector_Y[Settings::corrected][Settings::EE][Settings::ele][0]),
-                                         &(vector_EX[Settings::corrected][Settings::EE][Settings::ele][0]),
-                                         &(vector_EY[Settings::corrected][Settings::EE][Settings::ele][0]));
-   FR_SS_electron_EE->SetName("FR_SS_electron_EE");
-   
+	
+   FR_SS_electron_EB_unc = new TGraphErrors (vector_X[Settings::uncorrected][Settings::EB][Settings::ele].size(),
+															&(vector_X[Settings::uncorrected][Settings::EB][Settings::ele][0]),
+															&(vector_Y[Settings::uncorrected][Settings::EB][Settings::ele][0]),
+															&(vector_EX[Settings::uncorrected][Settings::EB][Settings::ele][0]),
+															&(vector_EY[Settings::uncorrected][Settings::EB][Settings::ele][0]));
+   FR_SS_electron_EB_unc->SetName("FR_SS_electron_EB_unc");
+	
+   FR_SS_electron_EE_unc = new TGraphErrors (vector_X[Settings::uncorrected][Settings::EE][Settings::ele].size(),
+															&(vector_X[Settings::uncorrected][Settings::EE][Settings::ele][0]),
+															&(vector_Y[Settings::uncorrected][Settings::EE][Settings::ele][0]),
+															&(vector_EX[Settings::uncorrected][Settings::EE][Settings::ele][0]),
+															&(vector_EY[Settings::uncorrected][Settings::EE][Settings::ele][0]));
+   FR_SS_electron_EE_unc->SetName("FR_SS_electron_EE_unc");
+	
+   FR_SS_muon_EB_unc = new TGraphErrors (vector_X[Settings::uncorrected][Settings::EB][Settings::mu].size(),
+													  &(vector_X[Settings::uncorrected][Settings::EB][Settings::mu][0]),
+													  &(vector_Y[Settings::uncorrected][Settings::EB][Settings::mu][0]),
+													  &(vector_EX[Settings::uncorrected][Settings::EB][Settings::mu][0]),
+													  &(vector_EY[Settings::uncorrected][Settings::EB][Settings::mu][0]));
+   FR_SS_muon_EB_unc->SetName("FR_SS_muon_EB_unc");
+	
+   FR_SS_muon_EE_unc = new TGraphErrors (vector_X[Settings::uncorrected][Settings::EE][Settings::mu].size(),
+													  &(vector_X[Settings::uncorrected][Settings::EE][Settings::mu][0]),
+													  &(vector_Y[Settings::uncorrected][Settings::EE][Settings::mu][0]),
+													  &(vector_EX[Settings::uncorrected][Settings::EE][Settings::mu][0]),
+													  &(vector_EY[Settings::uncorrected][Settings::EE][Settings::mu][0]));
+   FR_SS_muon_EE_unc->SetName("FR_SS_muon_EE_unc");
+	
+	
    FR_SS_muon_EB = new TGraphErrors (vector_X[Settings::corrected][Settings::EB][Settings::mu].size(),
                                      &(vector_X[Settings::corrected][Settings::EB][Settings::mu][0]),
                                      &(vector_Y[Settings::corrected][Settings::EB][Settings::mu][0]),
@@ -906,34 +921,26 @@ void SSmethod::ProduceFakeRates( TString file_name )
                                      &(vector_EX[Settings::corrected][Settings::EE][Settings::mu][0]),
                                      &(vector_EY[Settings::corrected][Settings::EE][Settings::mu][0]));
    FR_SS_muon_EE->SetName("FR_SS_muon_EE");
+	
+   // Electron fake rates must be corrected using average number of missing hits
+	if ( input_file_data_name != "DONT_CORRECT" ) CorrectElectronFakeRate(input_file_data_name);
+	
+   FR_SS_electron_EB = new TGraphErrors (vector_X[Settings::corrected][Settings::EB][Settings::ele].size(),
+													  &(vector_X[Settings::corrected][Settings::EB][Settings::ele][0]),
+													  &(vector_Y[Settings::corrected][Settings::EB][Settings::ele][0]),
+													  &(vector_EX[Settings::corrected][Settings::EB][Settings::ele][0]),
+													  &(vector_EY[Settings::corrected][Settings::EB][Settings::ele][0]));
+   FR_SS_electron_EB->SetName("FR_SS_electron_EB");
+	
+   FR_SS_electron_EE = new TGraphErrors (vector_X[Settings::corrected][Settings::EE][Settings::ele].size(),
+													  &(vector_X[Settings::corrected][Settings::EE][Settings::ele][0]),
+													  &(vector_Y[Settings::corrected][Settings::EE][Settings::ele][0]),
+													  &(vector_EX[Settings::corrected][Settings::EE][Settings::ele][0]),
+													  &(vector_EY[Settings::corrected][Settings::EE][Settings::ele][0]));
+   FR_SS_electron_EE->SetName("FR_SS_electron_EE");
+
    
-   FR_SS_electron_EB_unc = new TGraphErrors (vector_X[Settings::uncorrected][Settings::EB][Settings::ele].size(),
-                                             &(vector_X[Settings::uncorrected][Settings::EB][Settings::ele][0]),
-                                             &(vector_Y[Settings::uncorrected][Settings::EB][Settings::ele][0]),
-                                             &(vector_EX[Settings::uncorrected][Settings::EB][Settings::ele][0]),
-                                             &(vector_EY[Settings::uncorrected][Settings::EB][Settings::ele][0]));
-   FR_SS_electron_EB_unc->SetName("FR_SS_electron_EB_unc");
-   
-   FR_SS_electron_EE_unc = new TGraphErrors (vector_X[Settings::uncorrected][Settings::EE][Settings::ele].size(),
-                                             &(vector_X[Settings::uncorrected][Settings::EE][Settings::ele][0]),
-                                             &(vector_Y[Settings::uncorrected][Settings::EE][Settings::ele][0]),
-                                             &(vector_EX[Settings::uncorrected][Settings::EE][Settings::ele][0]),
-                                             &(vector_EY[Settings::uncorrected][Settings::EE][Settings::ele][0]));
-   FR_SS_electron_EE_unc->SetName("FR_SS_electron_EE_unc");
-   
-   FR_SS_muon_EB_unc = new TGraphErrors (vector_X[Settings::uncorrected][Settings::EB][Settings::mu].size(),
-                                         &(vector_X[Settings::uncorrected][Settings::EB][Settings::mu][0]),
-                                         &(vector_Y[Settings::uncorrected][Settings::EB][Settings::mu][0]),
-                                         &(vector_EX[Settings::uncorrected][Settings::EB][Settings::mu][0]),
-                                         &(vector_EY[Settings::uncorrected][Settings::EB][Settings::mu][0]));
-   FR_SS_muon_EB_unc->SetName("FR_SS_muon_EB_unc");
-   
-   FR_SS_muon_EE_unc = new TGraphErrors (vector_X[Settings::uncorrected][Settings::EE][Settings::mu].size(),
-                                         &(vector_X[Settings::uncorrected][Settings::EE][Settings::mu][0]),
-                                         &(vector_Y[Settings::uncorrected][Settings::EE][Settings::mu][0]),
-                                         &(vector_EX[Settings::uncorrected][Settings::EE][Settings::mu][0]),
-                                         &(vector_EY[Settings::uncorrected][Settings::EE][Settings::mu][0]));
-   FR_SS_muon_EE_unc->SetName("FR_SS_muon_EE_unc");
+
    
    PlotFR();
    
@@ -956,6 +963,271 @@ void SSmethod::ProduceFakeRates( TString file_name )
    cout << "[INFO] Fake rates produced and stored in a file." << endl;
 }
 //===============================================================
+
+
+//========================================================================
+void SSmethod::CorrectElectronFakeRate( TString input_file_data_name )
+{
+	TGraphErrors *FR_MissingHits_graph[num_of_eta_bins][99];
+	
+	Calculate_FR_nMissingHits(input_file_data_name, FR_MissingHits_graph);
+	Fit_FRnMH_graphs(FR_MissingHits_graph);
+	cout << "[INFO] All graphs fitted." << endl;
+	Correct_Final_FR( input_file_data_name );
+	cout << "[INFO] Electron fake rates have been corrected." << endl;
+}
+//========================================================================
+
+
+//========================================================================
+void SSmethod::Calculate_FR_nMissingHits( TString input_file_data_name, TGraphErrors *FR_MissingHits_graph[99][99] )
+{
+	input_file_data = new TFile("./" + input_file_data_name);
+	
+	hCounters = (TH1F*)input_file_data->Get("CRZLTree/Counters");
+	gen_sum_weights = (Long64_t)hCounters->GetBinContent(40);
+	
+	input_tree_data = (TTree*)input_file_data->Get("CRZLTree/candTree");
+	Init( input_tree_data, input_file_data_name , false);
+	
+	_current_process = find_current_process(input_file_data_name);
+	
+	for ( int i_pt = 0; i_pt < _n_pT_bins-2; i_pt++)
+	{
+		for ( int i_eta = 0; i_eta < num_of_eta_bins; i_eta++)
+		{
+			for ( int i_ZMass = 0; i_ZMass < num_of_z_mass_windows; i_ZMass++ )
+			{
+				_N_MissingHits[i_ZMass][i_eta][i_pt] = 0.;
+				_N_Passing[i_ZMass][i_eta][i_pt] = 0.;
+				_N_Failling[i_ZMass][i_eta][i_pt] = 0.;
+			}
+		}
+	}
+	
+	if (fChain == 0) return;
+	
+	Long64_t nentries = fChain->GetEntriesFast();
+	
+	Long64_t nbytes = 0, nb = 0;
+	
+	for (Long64_t jentry=0; jentry<nentries;jentry++)
+	{
+		Long64_t ientry = LoadTree(jentry);
+		if (ientry < 0) break;
+		nb = fChain->GetEntry(jentry);
+		nbytes += nb;
+		
+		if ( abs(LepLepId->at(2)) != 11 ) continue; // only electrons
+		if ( (LepPt->at(0) > LepPt->at(1)) && (LepPt->at(0) < 20. || LepPt->at(1) < 10.) ) continue;
+		if ( (LepPt->at(1) > LepPt->at(0)) && (LepPt->at(1) < 20. || LepPt->at(0) < 10.) ) continue;
+		if ( LepSIP->at(2) > 4.) continue;
+		if ( PFMET > 25. ) continue;
+		else
+		{
+			_current_pT_bin = Find_Ele_pT_bin ( LepPt->at(2) );
+			_current_eta_bin = Find_Ele_eta_bin ( LepEta->at(2));
+			
+			if ( (Z1Mass > 40.) && (Z1Mass < 120.) )
+			{
+				_N_MissingHits[Settings::_40_MZ1_120][_current_eta_bin][_current_pT_bin] += LepMissingHit->at(2);
+				if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35) _N_Passing[Settings::_40_MZ1_120][_current_eta_bin][_current_pT_bin] += 1.;
+				else _N_Failling[Settings::_40_MZ1_120][_current_eta_bin][_current_pT_bin] += 1.;
+			}
+			
+			if ( abs( Z1Mass - 91.2 ) < 7. )
+			{
+				_N_MissingHits[Settings::_MZ1mMZtrue_7][_current_eta_bin][_current_pT_bin] += LepMissingHit->at(2);
+				if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35) _N_Passing[Settings::_MZ1mMZtrue_7][_current_eta_bin][_current_pT_bin] += 1.;
+				else _N_Failling[Settings::_MZ1mMZtrue_7][_current_eta_bin][_current_pT_bin] += 1.;
+			}
+			
+			if ( (Z1Mass > 60.) && (Z1Mass < 120.) )
+			{
+				_N_MissingHits[Settings::_60_MZ1_120][_current_eta_bin][_current_pT_bin] += LepMissingHit->at(2);
+				if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35) _N_Passing[Settings::_60_MZ1_120][_current_eta_bin][_current_pT_bin] += 1.;
+				else _N_Failling[Settings::_60_MZ1_120][_current_eta_bin][_current_pT_bin] += 1.;
+			}
+			
+			TLorentzVector p1,p2,p3;
+			p1.SetPtEtaPhiM(LepPt->at(0), LepEta->at(0), LepPhi->at(0), 0.);
+			p2.SetPtEtaPhiM(LepPt->at(1), LepEta->at(1), LepPhi->at(1), 0.);
+			p3.SetPtEtaPhiM(LepPt->at(2), LepEta->at(2), LepPhi->at(2), 0.);
+			
+			if ( abs( ((p1+p2)+p3).M() - 91.2 ) < 5. )//3 lepton mass
+			{
+				_N_MissingHits[Settings::_MZ1EmMZtrue_5][_current_eta_bin][_current_pT_bin] += LepMissingHit->at(2);
+				if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35) _N_Passing[Settings::_MZ1EmMZtrue_5][_current_eta_bin][_current_pT_bin] += 1.;
+				else _N_Failling[Settings::_MZ1EmMZtrue_5][_current_eta_bin][_current_pT_bin] += 1.;
+			}
+		}
+	} // END events loop
+	
+	//Fill vectors to produce TGraphs
+	
+	vector<Float_t> vector_x[num_of_eta_bins][_n_pT_bins-2];
+	vector<Float_t> vector_y[num_of_eta_bins][_n_pT_bins-2];
+	vector<Float_t> vector_ex[num_of_eta_bins][_n_pT_bins-2];
+	vector<Float_t> vector_ey[num_of_eta_bins][_n_pT_bins-2];
+	
+	for ( int i_pt = 0; i_pt < _n_pT_bins-2; i_pt++)
+	{
+		for ( int i_eta = 0; i_eta < num_of_eta_bins; i_eta++)
+		{
+			for ( int i_ZMass = 0; i_ZMass < num_of_z_mass_windows; i_ZMass++ )
+			{
+				vector_x[i_eta][i_pt].push_back(_N_MissingHits[i_ZMass][i_eta][i_pt]/(_N_Passing[i_ZMass][i_eta][i_pt] + _N_Failling[i_ZMass][i_eta][i_pt]));
+				vector_ex[i_eta][i_pt].push_back(sqrt(pow((1./pow(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt],2)),2)*_N_MissingHits[i_ZMass][i_eta][i_pt] + pow((_N_MissingHits[i_ZMass][i_eta][i_pt]/pow(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt],2)),2)*(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt])));
+				//cout << "N_MH = " << _N_MissingHits[i_ZMass][i_eta][i_pt] << " N_P = " << _N_Passing[i_ZMass][i_eta][i_pt] << " N_F = " << _N_Failling[i_ZMass][i_eta][i_pt] << " vector_x = " << vector_x[i_eta][i_pt][i_ZMass] << " ,i_pT = " << i_pt << " ,i_eta = " << i_eta<< " ,i_ZMass = " << i_ZMass<< endl;
+				
+				vector_y[i_eta][i_pt].push_back(_N_Passing[i_ZMass][i_eta][i_pt]/(_N_Passing[i_ZMass][i_eta][i_pt] + _N_Failling[i_ZMass][i_eta][i_pt]));
+				vector_ey[i_eta][i_pt].push_back(sqrt(pow((_N_Failling[i_ZMass][i_eta][i_pt]/pow(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt],2)),2)*_N_Passing[i_ZMass][i_eta][i_pt] + pow((_N_Passing[i_ZMass][i_eta][i_pt]/pow(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt],2)),2)*_N_Failling[i_ZMass][i_eta][i_pt]));
+				
+				//cout << "vector_y = " << vector_y[i_eta][i_pt][i_ZMass] << " ,i_pT = " << i_pt << " ,i_eta = " << i_eta<< " ,i_ZMass = " << i_ZMass<< endl;
+			}
+		}
+		
+	}
+	
+	for ( int i_pt = 0; i_pt < _n_pT_bins-2; i_pt++)
+	{
+		for ( int i_eta = 0; i_eta < num_of_eta_bins; i_eta++)
+		{
+			FR_MissingHits_graph[i_eta][i_pt] = new TGraphErrors(vector_x[i_eta][i_pt].size(),
+																					&(vector_x[i_eta][i_pt][0]),
+																					&(vector_y[i_eta][i_pt][0]),
+																					&(vector_ex[i_eta][i_pt][0]),
+																					&(vector_ey[i_eta][i_pt][0]));
+		}
+		
+	}
+	
+}
+//========================================================================
+
+
+//============================================================================
+void SSmethod::Fit_FRnMH_graphs(TGraphErrors *FR_MissingHits_graph[99][99])
+{
+	for ( int i_pt = 0; i_pt < _n_pT_bins-2; i_pt++)
+	{
+		for ( int i_eta = 0; i_eta < num_of_eta_bins; i_eta++)
+		{
+			TString func_name;
+			func_name.Form("FR_MissingHits_func_eta_%d_pT_%d",i_eta,i_pt);
+			Ele_FR_correction_function[i_eta][i_pt] = new TF1(func_name,"[0]*x+[1]",0,3);
+			Ele_FR_correction_function[i_eta][i_pt]->SetParameter(0,1.);
+			Ele_FR_correction_function[i_eta][i_pt]->SetParameter(1,0.);
+			
+			FR_MissingHits_graph[i_eta][i_pt]->Fit(Ele_FR_correction_function[i_eta][i_pt]);
+			
+			TString graph_name;
+			graph_name.Form("FR_MissingHits_graph_eta_%d_pT_%d",i_eta,i_pt);
+			FR_MissingHits_graph[i_eta][i_pt]->SetName(graph_name);
+			FR_MissingHits_graph[i_eta][i_pt]->GetXaxis()->SetTitle("<# Missing Hits>");
+			FR_MissingHits_graph[i_eta][i_pt]->GetYaxis()->SetTitle("Fake Rate");
+			TCanvas *c1 = new TCanvas(graph_name,graph_name,900,900);
+			c1->cd();
+			FR_MissingHits_graph[i_eta][i_pt]->Draw("AP");
+			system("mkdir -p Fits");
+			SavePlots(c1, "Fits/"+graph_name+".pdf");
+		}
+	}
+}
+//============================================================================
+
+
+//=============================================================
+void SSmethod::Correct_Final_FR( TString input_file_data_name)
+{
+	input_file_data = new TFile("./" + input_file_data_name);
+	
+	hCounters = (TH1F*)input_file_data->Get("CRZLLTree/Counters");
+	gen_sum_weights = (Long64_t)hCounters->GetBinContent(40);
+	
+	input_tree_data = (TTree*)input_file_data->Get("CRZLLTree/candTree");
+	Init( input_tree_data, input_file_data_name , true);
+	
+	_current_process = find_current_process(input_file_data_name);
+	
+	if (fChain == 0) return;
+	
+	Long64_t nentries = fChain->GetEntriesFast();
+	
+	Long64_t nbytes = 0, nb = 0;
+	
+	float _N_MissingHits_ZLL[num_of_eta_bins][_n_pT_bins];
+	float _N_Passing_ZLL[num_of_eta_bins][_n_pT_bins];
+	float _N_Failling_ZLL[num_of_eta_bins][_n_pT_bins];
+	
+	float _avg_MissingHits_ZLL[num_of_eta_bins][_n_pT_bins];
+	
+	for ( int i_pt = 0; i_pt <= _n_pT_bins-2; i_pt++)
+	{
+		for ( int i_eta = 0; i_eta < num_of_eta_bins; i_eta++)
+		{
+			_N_MissingHits_ZLL[i_eta][i_pt] = 0.;
+			_N_Passing_ZLL[i_eta][i_pt] = 0.;
+			_N_Failling_ZLL[i_eta][i_pt] = 0.;
+		}
+	}
+	
+	for (Long64_t jentry=0; jentry<nentries;jentry++)
+	{
+		Long64_t ientry = LoadTree(jentry);
+		if (ientry < 0) break;
+		nb = fChain->GetEntry(jentry);
+		nbytes += nb;
+		
+		if ((test_bit(CRflag, CRZLLss))) continue;
+		
+		if ( abs(Z2Flav) != 121) continue; // only electrons
+//		if ( (LepPt->at(0) > LepPt->at(1)) && (LepPt->at(0) < 20. || LepPt->at(1) < 10.) ) continue;
+//		if ( (LepPt->at(1) > LepPt->at(0)) && (LepPt->at(1) < 20. || LepPt->at(0) < 10.) ) continue;
+
+		else
+		{
+			_current_pT_bin = Find_Ele_pT_bin ( LepPt->at(2) );
+			_current_eta_bin = Find_Ele_eta_bin ( LepEta->at(2));
+
+			_N_MissingHits_ZLL[_current_eta_bin][_current_pT_bin] += LepMissingHit->at(2);
+			if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35) _N_Passing_ZLL[_current_eta_bin][_current_pT_bin] += 1.;
+			else _N_Failling_ZLL[_current_eta_bin][_current_pT_bin] += 1.;
+			
+			_current_pT_bin = Find_Ele_pT_bin ( LepPt->at(3) );
+			_current_eta_bin = Find_Ele_eta_bin ( LepEta->at(3));
+			
+			_N_MissingHits_ZLL[_current_eta_bin][_current_pT_bin] += LepMissingHit->at(3);
+			if(LepisID->at(3) && LepCombRelIsoPF->at(3) < 0.35) _N_Passing_ZLL[_current_eta_bin][_current_pT_bin] += 1.;
+			else _N_Failling_ZLL[_current_eta_bin][_current_pT_bin] += 1.;
+		}
+		
+	} // END events loop
+	
+	for ( int i_pt = 0; i_pt < _n_pT_bins-2; i_pt++)
+	{
+		_avg_MissingHits_ZLL[Settings::EB][i_pt] = _N_MissingHits_ZLL[Settings::EB][i_pt]/(_N_Passing_ZLL[Settings::EB][i_pt] + _N_Failling_ZLL[Settings::EB][i_pt]);
+		//cout << "avg_Missing_Hits EB = " << _avg_MissingHits_ZLL[Settings::EB][i_pt ] << endl;
+		
+		vector_X[Settings::corrected][Settings::EB][Settings::ele][i_pt] = ((_pT_bins[i_pt + 1] + _pT_bins[i_pt + 2])/2);
+		vector_Y[Settings::corrected][Settings::EB][Settings::ele][i_pt] = (Ele_FR_correction_function[Settings::EB][i_pt]->Eval(_avg_MissingHits_ZLL[Settings::EB][i_pt]));
+		
+		vector_EX[Settings::corrected][Settings::EB][Settings::ele][i_pt] = ((_pT_bins[i_pt + 2] - _pT_bins[i_pt + 1])/2);
+		vector_EY[Settings::corrected][Settings::EB][Settings::ele][i_pt] = 0;
+		
+		
+		_avg_MissingHits_ZLL[Settings::EE][i_pt] = _N_MissingHits_ZLL[Settings::EE][i_pt]/(_N_Passing_ZLL[Settings::EE][i_pt] + _N_Failling_ZLL[Settings::EE][i_pt]);
+		//cout << "avg_Missing_Hits EE = " << _avg_MissingHits_ZLL[Settings::EE][i_pt] << endl;
+		
+		vector_X[Settings::corrected][Settings::EE][Settings::ele][i_pt] = ((_pT_bins[i_pt + 1] + _pT_bins[i_pt + 2])/2);
+		vector_Y[Settings::corrected][Settings::EE][Settings::ele][i_pt] = (Ele_FR_correction_function[Settings::EE][i_pt]->Eval(_avg_MissingHits_ZLL[Settings::EE][i_pt]));
+		
+		vector_EX[Settings::corrected][Settings::EE][Settings::ele][i_pt] = ((_pT_bins[i_pt + 2] - _pT_bins[i_pt + 1])/2);
+		vector_EY[Settings::corrected][Settings::EE][Settings::ele][i_pt] = 0;
+	}
+	
+}
+//=============================================================
 
 
 //===============================================================
@@ -1140,10 +1412,11 @@ void SSmethod::PlotZX( TString variable_name, TString folder )
          histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->Draw("HIST");
          
          TString _fs_label;
-         if ( i_fs == Settings::fs4e) _fs_label = "m_{4#font[12]{e}} (GeV)";
-         if ( i_fs == Settings::fs4mu) _fs_label = "m_{4#font[12]{#mu}} (GeV)";
+         if ( i_fs == Settings::fs4e)    _fs_label = "m_{4#font[12]{e}} (GeV)";
+         if ( i_fs == Settings::fs4mu)   _fs_label = "m_{4#font[12]{#mu}} (GeV)";
          if ( i_fs == Settings::fs2e2mu) _fs_label = "m_{2#font[12]{e}2#font[12]{#mu}} (GeV)";
          if ( i_fs == Settings::fs2mu2e) _fs_label = "m_{2#font[12]{#mu}2#font[12]{e}} (GeV)";
+		 if ( i_fs == Settings::fs4l)    _fs_label = "m_{4#font[12]{l}} (GeV)";
          histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetXaxis()->SetTitle(_fs_label);
          histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetXaxis()->SetTitleSize(0.04);
          histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetXaxis()->SetLabelSize(0.04);
@@ -1264,6 +1537,35 @@ int SSmethod::FindFinalState()
    return final_state;
 }
 //=============================
+
+//=========================================
+int SSmethod::Find_Ele_pT_bin( Float_t pT )
+{
+	int bin = 0;
+	
+	for ( int i = 2; i <= _n_pT_bins ; i++)
+	{
+		if ( (pT > _pT_bins[i-1]) && (pT < _pT_bins[i]) ) bin = i - 2;
+	}
+	if ( pT > 80. ) bin = _n_pT_bins - 2;
+
+	//cout << "PT = " << pT << " bin = " << bin << endl;
+	return bin;
+}
+//=========================================
+
+//=========================================
+int SSmethod::Find_Ele_eta_bin( Float_t eta )
+{
+	int bin = 0;
+	
+	if (abs(eta) < 1.479) bin = Settings::EB;
+	else bin = Settings::EE;
+	
+	//cout << "eta = " << eta << " bin = " << bin << endl;
+	return bin;
+}
+//=========================================
 
 
 //=================================

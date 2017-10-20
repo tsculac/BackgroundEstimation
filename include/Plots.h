@@ -28,11 +28,11 @@ public:
    struct M4l
    {
       TString var_X_label = "m_{4#font[12]{l}} (GeV)";
-      TString var_Y_label = "Events / 8 GeV";
+      TString var_Y_label = "Events / 20 GeV";
       TString var_cut_label = "";
-      Int_t var_N_bin = 110;
+      Int_t var_N_bin = 40;
       Float_t var_min = 70;
-      Float_t var_max = 950;
+      Float_t var_max = 870;
       Bool_t var_log_x = 0;
       Bool_t var_log_y = 0;
       Int_t restrict_count_var = 0;

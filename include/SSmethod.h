@@ -7,6 +7,7 @@
 #include <iomanip> // For setprecision
 #include <vector>
 #include <map>
+#include <cstdlib>
 
 // ROOT
 #include "TApplication.h"
@@ -18,9 +19,11 @@
 #include "TStyle.h"
 #include "TH1F.h"
 #include "TH2F.h"
+#include "TF1.h"
 #include "TLegend.h"
 #include "TGraphErrors.h"
 #include "TMultiGraph.h"
+#include "TLorentzVector.h"
 #include "TROOT.h"
 #include "TSystem.h"
 
@@ -44,6 +47,7 @@ const int num_of_categories        = Settings::num_of_categories;
 const int num_of_regions_ss        = Settings::num_of_regions_ss;
 const int num_of_eta_bins          = Settings::num_of_eta_bins;
 const int num_of_fake_rates        = Settings::num_of_fake_rates;
+const int num_of_z_mass_windows    = Settings::num_of_z_mass_windows;
 
 class SSmethod: public Tree
 {
@@ -62,7 +66,7 @@ public:
    void GetFRHistos( TString );
    void GetDataMCHistos( TString );
    void GetZXHistos( TString );
-   void ProduceFakeRates( TString );
+   void ProduceFakeRates( TString , TString input_file_data_name = "DONT_CORRECT");
    void PlotDataMC( TString , TString );
    void PlotZX( TString , TString );
    void Calculate_SSOS_Ratio( TString, TString, bool );
@@ -86,6 +90,13 @@ private:
    bool GetVarLogY( TString );
    void SavePlots( TCanvas*, TString );
    void PlotFR();
+	void CorrectElectronFakeRate( TString );
+	void Calculate_FR_nMissingHits( TString input_file_data_name, TGraphErrors *FR_MissingHits_graph[99][99]);
+	void Fit_FRnMH_graphs( TGraphErrors *FR_MissingHits_graph[99][99] );
+	void Correct_Final_FR( TString );
+	int Find_Ele_pT_bin( Float_t );
+	int Find_Ele_eta_bin( Float_t );
+	
    TLegend* CreateLegend_FR( string , TGraphErrors*, TGraphErrors*,TGraphErrors*,TGraphErrors* );
    TLegend* CreateLegend_ZXcontr( string , TH1F*, TH1F*,TH1F*,TH1F*,TH1F* );
    TLegend* CreateLegend_ZLL( string , TH1F*, TH1F*,TH1F*,TH1F*,TH1F* );
@@ -116,7 +127,7 @@ private:
    float _N_SS_events[num_of_final_states][num_of_categories];
    float _N_OS_events[num_of_final_states][num_of_categories];
    
-   int _current_process, _current_final_state, _current_category, _n_pT_bins;
+   int _current_process, _current_final_state, _current_category, _n_pT_bins, _current_pT_bin, _current_eta_bin;
    float _lumi, _yield_SR, _k_factor;
    double gen_sum_weights, _event_weight, _f3, _f4;
 
@@ -134,6 +145,14 @@ private:
    vector<Float_t> vector_Y[num_of_fake_rates][num_of_eta_bins][num_of_flavours];
    vector<Float_t> vector_EX[num_of_fake_rates][num_of_eta_bins][num_of_flavours];
    vector<Float_t> vector_EY[num_of_fake_rates][num_of_eta_bins][num_of_flavours];
+	
+	float _N_Passing[num_of_z_mass_windows][num_of_eta_bins][99];
+	float _N_Failling[num_of_z_mass_windows][num_of_eta_bins][99];
+	float _N_MissingHits[num_of_z_mass_windows][num_of_eta_bins][99];
+	
+	TF1 *Ele_FR_correction_function[num_of_eta_bins][99];
+
+	
    
 };
 #endif

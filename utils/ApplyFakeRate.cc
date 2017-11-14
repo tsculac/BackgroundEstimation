@@ -17,6 +17,7 @@
 #include "TSystem.h"
 #include "THStack.h"
 #include "TTree.h"
+#include "TGraphErrors.h"
 
 using namespace std;
 
@@ -30,11 +31,12 @@ enum LeptonFlavours
 	NUM_OF_FLAVOURS
 };
 
-TH1D *fr_ele_EB[LeptonFlavours::NUM_OF_FLAVOURS],*fr_ele_EE[LeptonFlavours::NUM_OF_FLAVOURS];
-TH1D *fr_mu_EB[LeptonFlavours::NUM_OF_FLAVOURS],*fr_mu_EE[LeptonFlavours::NUM_OF_FLAVOURS];
+TGraphErrors *fr_ele_EB[LeptonFlavours::NUM_OF_FLAVOURS],*fr_ele_EE[LeptonFlavours::NUM_OF_FLAVOURS];
+TGraphErrors *fr_mu_EB[LeptonFlavours::NUM_OF_FLAVOURS],*fr_mu_EE[LeptonFlavours::NUM_OF_FLAVOURS];
+TGraphErrors *g_FR_mu_EB,*g_FR_mu_EE,*g_FR_e_EB,*g_FR_e_EE;
 
 
-int matchFlavourOnlyJets(int MatchJetPartonFlavour, int GenMCTruthMatchId, int GenMCTruthMatchMotherId)
+int matchFlavour(int MatchJetPartonFlavour, int GenMCTruthMatchId, int GenMCTruthMatchMotherId)
 {
 	int flavour = 0;
 	
@@ -60,43 +62,83 @@ int matchFlavourOnlyJets(int MatchJetPartonFlavour, int GenMCTruthMatchId, int G
 	return flavour;
 }
 
-float GetFakeRate(float LepPt, float LepEta, int LepId, int flavour)
+float GetFakeRate_WithFlavour(float lep_Pt, float lep_eta, int lep_ID, int flavour)
 {
 	float fr = -1.;
 	
-	float my_lep_Pt = LepPt >= 55. ? 54. : LepPt;
-	int   my_lep_ID = abs(LepId);
+	float my_lep_Pt = lep_Pt >= 80. ? 79. : lep_Pt;
+	int   my_lep_ID = abs(lep_ID);
 	
 	int bin = 0;
-	if ( my_lep_Pt > 5 && my_lep_Pt <= 15 ) bin = 1;
-	else if ( my_lep_Pt > 15 && my_lep_Pt <= 25 ) bin = 2;
-	else if ( my_lep_Pt > 25 && my_lep_Pt <= 35 ) bin = 3;
-	else if ( my_lep_Pt > 35 && my_lep_Pt <= 45 ) bin = 4;
-	else if ( my_lep_Pt > 45 && my_lep_Pt <= 55 ) bin = 5;
-	else if ( my_lep_Pt > 55 && my_lep_Pt <= 65 ) bin = 6;
-	else if ( my_lep_Pt > 65 && my_lep_Pt <= 75 ) bin = 7;
-	else if ( my_lep_Pt > 75 && my_lep_Pt <= 85 ) bin = 8;
+	if ( my_lep_Pt > 5 && my_lep_Pt <= 7 ) bin = 0;
+	else if ( my_lep_Pt >  7 && my_lep_Pt <= 10 ) bin = 1;
+	else if ( my_lep_Pt > 10 && my_lep_Pt <= 20 ) bin = 2;
+	else if ( my_lep_Pt > 20 && my_lep_Pt <= 30 ) bin = 3;
+	else if ( my_lep_Pt > 30 && my_lep_Pt <= 40 ) bin = 4;
+	else if ( my_lep_Pt > 40 && my_lep_Pt <= 50 ) bin = 5;
+	else if ( my_lep_Pt > 50 && my_lep_Pt <= 80 ) bin = 6;
 
+
+	if ( fabs(my_lep_ID) == 11 ) bin = bin-1; // there is no [5, 7] bin in the electron fake rate
+	
 	if ( my_lep_ID == 11 )
 	{
-		if ( fabs(LepEta) < 1.479 )
-			fr = fr_ele_EB[flavour]->GetBinContent(bin);
+		if ( fabs(lep_eta) < 1.479 )
+			fr = (fr_ele_EB[flavour]->GetY())[bin];
 		else
-			fr = fr_ele_EE[flavour]->GetBinContent(bin);
+			fr = (fr_ele_EE[flavour]->GetY())[bin];
 	}
 	else if ( my_lep_ID == 13 )
 	{
-		if ( fabs(LepEta) < 1.2 )
-			fr = fr_mu_EB[flavour]->GetBinContent(bin);
+		if ( fabs(lep_eta) < 1.2 )
+			fr = (fr_mu_EB[flavour]->GetY())[bin];
 		else
-			fr = fr_mu_EE[flavour]->GetBinContent(bin);
+			fr = (fr_mu_EE[flavour]->GetY())[bin];
 	}
 	else
 	{
 		cout << "[ERROR] Wrong lepton ID: " << my_lep_ID << endl;
 		fr = 0;
 	}
+	
 	return fr;
+}
+
+float GetFakeRate(float lep_Pt, float lep_eta, int lep_ID)
+{
+	float my_lep_Pt = lep_Pt >= 80. ? 79. : lep_Pt;
+	int   my_lep_ID = abs(lep_ID);
+	
+	int bin = 0;
+	if ( my_lep_Pt > 5 && my_lep_Pt <= 7 ) bin = 0;
+	else if ( my_lep_Pt >  7 && my_lep_Pt <= 10 ) bin = 1;
+	else if ( my_lep_Pt > 10 && my_lep_Pt <= 20 ) bin = 2;
+	else if ( my_lep_Pt > 20 && my_lep_Pt <= 30 ) bin = 3;
+	else if ( my_lep_Pt > 30 && my_lep_Pt <= 40 ) bin = 4;
+	else if ( my_lep_Pt > 40 && my_lep_Pt <= 50 ) bin = 5;
+	else if ( my_lep_Pt > 50 && my_lep_Pt <= 80 ) bin = 6;
+	
+	if ( fabs(my_lep_ID) == 11 ) bin = bin-1; // there is no [5, 7] bin in the electron fake rate
+	
+	if ( my_lep_ID == 11 )
+	{
+		if ( fabs(lep_eta) < 1.479 )
+			return (g_FR_e_EB->GetY())[bin];
+		else
+			return (g_FR_e_EE->GetY())[bin];
+	}
+	else if ( my_lep_ID == 13 )
+	{
+		if ( fabs(lep_eta) < 1.2 )
+			return (g_FR_mu_EB->GetY())[bin];
+		else
+			return (g_FR_mu_EE->GetY())[bin];
+	}
+	else
+	{
+		cout << "[ERROR] Wrong lepton ID: " << my_lep_ID << endl;
+		return 0;
+	}
 }
 
 void fillZXHisto_WithFlavourInfo(TString input_file_name, float lumi, TH1F* m4l_ZX[3][4])
@@ -119,16 +161,16 @@ void fillZXHisto_WithFlavourInfo(TString input_file_name, float lumi, TH1F* m4l_
 	for (int i_jf = 0; i_jf < LeptonFlavours::NUM_OF_FLAVOURS; i_jf++)
 	{
 		fr_name = "FR_ele_EB_"+to_string(i_jf);
-		fr_ele_EB[i_jf] = (TH1D*)fr_file->Get(fr_name);
+		fr_ele_EB[i_jf] = (TGraphErrors*)fr_file->Get(fr_name);
 		
 		fr_name = "FR_ele_EE_"+to_string(i_jf);
-		fr_ele_EE[i_jf] = (TH1D*)fr_file->Get(fr_name);
+		fr_ele_EE[i_jf] = (TGraphErrors*)fr_file->Get(fr_name);
 		
 		fr_name = "FR_mu_EB_"+to_string(i_jf);
-		fr_mu_EB[i_jf] = (TH1D*)fr_file->Get(fr_name);
+		fr_mu_EB[i_jf] = (TGraphErrors*)fr_file->Get(fr_name);
 		
 		fr_name = "FR_mu_EE_"+to_string(i_jf);
-		fr_mu_EE[i_jf] = (TH1D*)fr_file->Get(fr_name);
+		fr_mu_EE[i_jf] = (TGraphErrors*)fr_file->Get(fr_name);
 
 	}
 	
@@ -220,9 +262,7 @@ void fillZXHisto_WithFlavourInfo(TString input_file_name, float lumi, TH1F* m4l_
 	_Tree->SetBranchAddress("GenMCTruthMatchMotherId",&GenMCTruthMatchMotherId);
 
 	int jet1_category = -1;
-	int lep1_flavour = -1;
 	int jet2_category = -1;
-	int lep2_flavour = -1;
 	int _current_final_state = -1;
 	int _current_proces = -1;
 
@@ -230,12 +270,10 @@ void fillZXHisto_WithFlavourInfo(TString input_file_name, float lumi, TH1F* m4l_
 	if(input_file_name.Contains("TTJets")) _current_proces = 1;
 	if(input_file_name.Contains("WZ"))     _current_proces = 2;
 	
-	TFile* fOutHistos = new TFile("./MCTruthStudy/ZXyields.root", "recreate");
-	fOutHistos->cd();
 
 	float _event_weight;
 	float _yield_SR;
-	
+
 	for(int i_event = 0; i_event < nentries; i_event++)
 	{
 		_Tree->GetEvent(i_event);
@@ -248,26 +286,176 @@ void fillZXHisto_WithFlavourInfo(TString input_file_name, float lumi, TH1F* m4l_
 		if(abs(Z1Flav) == 169 && abs(Z2Flav) == 121) _current_final_state = 3;
 		
 		//Determine lepton origin
-		jet1_category = matchFlavourOnlyJets(MatchJetPartonFlavour->at(2), GenMCTruthMatchId->at(2), GenMCTruthMatchMotherId->at(2));
-		lep1_flavour = (fabs(LepLepId->at(2)) == 11) ? 0 : 1;
+		jet1_category = matchFlavour(MatchJetPartonFlavour->at(2), GenMCTruthMatchId->at(2), GenMCTruthMatchMotherId->at(2));
 		
-		jet2_category = matchFlavourOnlyJets(MatchJetPartonFlavour->at(3), GenMCTruthMatchId->at(3), GenMCTruthMatchMotherId->at(3));
-		lep2_flavour = (fabs(LepLepId->at(3)) == 11) ? 0 : 1;
-
+		jet2_category = matchFlavour(MatchJetPartonFlavour->at(3), GenMCTruthMatchId->at(3), GenMCTruthMatchMotherId->at(3));
 		
 		_event_weight = (lumi * 1000 * xsec * overallEventWeight) / gen_sum_weights;
 		
 		// Calculate yield
-		_yield_SR = _fs_ROS_SS.at(_current_final_state)*GetFakeRate(LepPt->at(2),LepEta->at(2),LepLepId->at(2),jet1_category)*GetFakeRate(LepPt->at(3),LepEta->at(3),LepLepId->at(3),jet2_category);
-//		cout << "YIELD = " << _yield_SR << endl;
-//		cout << "WEIGHT = " << _event_weight << endl;
-//		cout << "==================" << endl;
+		_yield_SR = _fs_ROS_SS.at(_current_final_state)*GetFakeRate_WithFlavour(LepPt->at(2),LepEta->at(2),LepLepId->at(2),jet1_category)*GetFakeRate_WithFlavour(LepPt->at(3),LepEta->at(3),LepLepId->at(3),jet2_category);
 		m4l_ZX[_current_proces][_current_final_state]->Fill(ZZMass, _yield_SR*_event_weight);
-
 		
+//		if (m4l_ZX[0][2]->Integral() != m4l_ZX[0][2]->Integral())
+//		{
+//			cout << "YIELD = " << _yield_SR << endl;
+//			cout << "WEIGHT = " << _event_weight << endl;
+//			cout << "ZZMass = " << ZZMass << endl;
+//			cout << LepPt->at(2) << " " << LepPt->at(3) << endl;
+//			cout << LepEta->at(2) << " " << LepEta->at(3) << endl;
+//			cout << LepLepId->at(2) << " " << LepLepId->at(3) << endl;
+//			cout << jet1_category << " " << jet2_category << endl;
+//			cout << GetFakeRate_WithFlavour(LepPt->at(2),LepEta->at(2),LepLepId->at(2),jet1_category) << " " << GetFakeRate_WithFlavour(LepPt->at(3),LepEta->at(3),LepLepId->at(3),jet2_category) << endl;
+//			cout << "==================" << endl;
+//			break;
+//		}
+
 	}
 
 cout << "[INFO] Z+X histograms filled for file " + input_file_name + "!" << endl;
+}
+
+
+void fillZXHisto(TString input_file_name, float lumi, TH1F* m4l_ZX[3][4])
+{
+	vector<float> _fs_ROS_SS;
+	//	_fs_ROS_SS.push_back(1.22);//4mu
+	//	_fs_ROS_SS.push_back(0.97);//4e
+	//	_fs_ROS_SS.push_back(1.30);//2e2mu
+	//	_fs_ROS_SS.push_back(0.98);//2mu2e
+	
+	_fs_ROS_SS.push_back(1.);//4mu
+	_fs_ROS_SS.push_back(1.);//4e
+	_fs_ROS_SS.push_back(1.);//2e2mu
+	_fs_ROS_SS.push_back(1.);//2mu2e
+	
+	TFile *fr_file = TFile::Open("FakeRates_SS_Moriond17.root");
+	
+	g_FR_mu_EB = (TGraphErrors*)fr_file->Get("FR_SS_muon_EB");
+	g_FR_mu_EE = (TGraphErrors*)fr_file->Get("FR_SS_muon_EE");
+	g_FR_e_EB  = (TGraphErrors*)fr_file->Get("FR_SS_electron_EB");
+	g_FR_e_EE  = (TGraphErrors*)fr_file->Get("FR_SS_electron_EE");
+	
+	TFile* _file = TFile::Open(input_file_name);
+	TTree* _Tree = (TTree*) _file->Get("CRZLLTree/candTree");
+	int  nentries = _Tree->GetEntries();
+	TH1F* hCounters = (TH1F*)_file->Get("CRZLLTree/Counters");
+	Long64_t gen_sum_weights = (Long64_t)hCounters->GetBinContent(40);
+	
+	Float_t PFMET;
+	Float_t ZZMass;
+	Float_t Z1Mass;
+	Short_t Z1Flav;
+	Float_t Z2Mass;
+	Short_t Z2Flav;
+	vector<float>   *LepPt = 0;
+	vector<float>   *LepEta = 0;
+	vector<float>   *LepPhi = 0;
+	vector<short>   *LepLepId = 0;
+	vector<float>   *LepSIP = 0;
+	vector<float>   *LepBDT = 0;
+	vector<bool>    *LepisID = 0;
+	vector<float>   *LepCombRelIsoPF = 0;
+	vector<int>     *LepMissingHit = 0;
+	Bool_t          passIsoPreFSR;
+	vector<float>   *JetPt = 0;
+	vector<float>   *JetEta = 0;
+	vector<float>   *JetPhi = 0;
+	vector<float>   *JetMass = 0;
+	vector<float>   *JetBTagger = 0;
+	vector<float>   *JetIsBtagged = 0;
+	vector<float>   *JetIsBtaggedWithSF = 0;
+	vector<float>   *JetQGLikelihood = 0;
+	vector<float>   *JetAxis2 = 0;
+	vector<float>   *JetMult = 0;
+	vector<float>   *JetPtD = 0;
+	vector<float>   *JetSigma = 0;
+	vector<short>   *MatchJetPartonFlavour = 0;
+	vector<float>   *MatchJetbTagger = 0;
+	Float_t         genHEPMCweight;
+	Float_t         PUWeight;
+	Float_t         dataMCWeight;
+	Float_t         trigEffWeight;
+	Float_t         overallEventWeight;
+	Float_t         HqTMCweight;
+	Float_t         xsec;
+	vector<short> 	 *GenMCTruthMatchId = 0;
+	vector<short> 	 *GenMCTruthMatchMotherId = 0;
+	
+	_Tree->SetBranchAddress("PFMET",&PFMET);
+	_Tree->SetBranchAddress("ZZMass",&ZZMass);
+	_Tree->SetBranchAddress("Z1Mass",&Z1Mass);
+	_Tree->SetBranchAddress("Z1Flav",&Z1Flav);
+	_Tree->SetBranchAddress("Z2Mass",&Z2Mass);
+	_Tree->SetBranchAddress("Z2Flav",&Z2Flav);
+	_Tree->SetBranchAddress("LepPt",&LepPt);
+	_Tree->SetBranchAddress("LepEta",&LepEta);
+	_Tree->SetBranchAddress("LepPhi",&LepPhi);
+	_Tree->SetBranchAddress("LepLepId",&LepLepId);
+	_Tree->SetBranchAddress("LepSIP",&LepSIP);
+	_Tree->SetBranchAddress("LepBDT",&LepBDT);
+	_Tree->SetBranchAddress("LepisID",&LepisID);
+	_Tree->SetBranchAddress("LepCombRelIsoPF",&LepCombRelIsoPF);
+	_Tree->SetBranchAddress("LepMissingHit", &LepMissingHit);
+	_Tree->SetBranchAddress("passIsoPreFSR",&passIsoPreFSR);
+	_Tree->SetBranchAddress("JetPt",&JetPt);
+	_Tree->SetBranchAddress("JetEta",&JetEta);
+	_Tree->SetBranchAddress("JetPhi",&JetPhi);
+	_Tree->SetBranchAddress("JetMass",&JetMass);
+	_Tree->SetBranchAddress("JetBTagger",&JetBTagger);
+	_Tree->SetBranchAddress("JetIsBtagged",&JetIsBtagged);
+	_Tree->SetBranchAddress("JetIsBtaggedWithSF",&JetIsBtaggedWithSF);
+	_Tree->SetBranchAddress("JetQGLikelihood",&JetQGLikelihood);
+	_Tree->SetBranchAddress("JetAxis2",&JetAxis2);
+	_Tree->SetBranchAddress("JetMult",&JetMult);
+	_Tree->SetBranchAddress("JetPtD",&JetPtD);
+	_Tree->SetBranchAddress("JetSigma",&JetSigma);
+	_Tree->SetBranchAddress("MatchJetPartonFlavour",&MatchJetPartonFlavour);
+	_Tree->SetBranchAddress("MatchJetbTagger",&MatchJetbTagger);
+	_Tree->SetBranchAddress("genHEPMCweight",&genHEPMCweight);
+	_Tree->SetBranchAddress("PUWeight",&PUWeight);
+	_Tree->SetBranchAddress("dataMCWeight",&dataMCWeight);
+	_Tree->SetBranchAddress("trigEffWeight",&trigEffWeight);
+	_Tree->SetBranchAddress("overallEventWeight",&overallEventWeight);
+	_Tree->SetBranchAddress("HqTMCweight",&HqTMCweight);
+	_Tree->SetBranchAddress("xsec",&xsec);
+	_Tree->SetBranchAddress("GenMCTruthMatchId",&GenMCTruthMatchId);
+	_Tree->SetBranchAddress("GenMCTruthMatchMotherId",&GenMCTruthMatchMotherId);
+	
+	int _current_final_state = -1;
+	int _current_proces = -1;
+	
+	if(input_file_name.Contains("DY"))     _current_proces = 0;
+	if(input_file_name.Contains("TTJets")) _current_proces = 1;
+	if(input_file_name.Contains("WZ"))     _current_proces = 2;
+	
+	float _event_weight;
+	float _yield_SR;
+	
+	for(int i_event = 0; i_event < nentries; i_event++)
+	{
+		_Tree->GetEvent(i_event);
+		
+		if(Z2Flav < 0) continue;
+		
+		if(abs(Z1Flav) == 169 && abs(Z2Flav) == 169) _current_final_state = 0;
+		if(abs(Z1Flav) == 121 && abs(Z2Flav) == 121) _current_final_state = 1;
+		if(abs(Z1Flav) == 121 && abs(Z2Flav) == 169) _current_final_state = 2;
+		if(abs(Z1Flav) == 169 && abs(Z2Flav) == 121) _current_final_state = 3;
+		
+		_event_weight = (lumi * 1000 * xsec * overallEventWeight) / gen_sum_weights;
+		
+		// Calculate yield
+		_yield_SR = _fs_ROS_SS.at(_current_final_state)*GetFakeRate(LepPt->at(2),LepEta->at(2),LepLepId->at(2))*GetFakeRate(LepPt->at(3),LepEta->at(3),LepLepId->at(3));
+		//		cout << "YIELD = " << _yield_SR << endl;
+		//		cout << "WEIGHT = " << _event_weight << endl;
+		//		cout << "==================" << endl;
+		m4l_ZX[_current_proces][_current_final_state]->Fill(ZZMass, _yield_SR*_event_weight);
+		
+		
+	}
+	
+	cout << "[INFO] Z+X histograms filled for file " + input_file_name + "!" << endl;
 }
 
 void DrawHistos(TH1F* m4l_ZX[3][4])
@@ -374,7 +562,7 @@ void ApplyFakeRate()
 {
 	gROOT->SetBatch();
 	
-	float lumi = 38.0;
+	float lumi = 35.9;
 	
 	TString path = "NewData/";
 	TString file_name = "/ZZ4lAnalysis.root";
@@ -400,9 +588,7 @@ void ApplyFakeRate()
 	fillZXHisto_WithFlavourInfo(DY, lumi, m4l_ZX);
 	fillZXHisto_WithFlavourInfo(TTJets, lumi, m4l_ZX);
 	fillZXHisto_WithFlavourInfo(WZTo3LNu, lumi, m4l_ZX);
-	
 	DrawHistos(m4l_ZX);
 	ResetHistos(m4l_ZX);
-	
 	
 }

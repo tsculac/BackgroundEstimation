@@ -20,6 +20,7 @@
 # Directories
 /Plots
 /Fits
+/MCTruthStudy
 
 # Run files
 run_SS

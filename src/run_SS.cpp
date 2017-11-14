@@ -40,15 +40,15 @@ int main( int argc, char *argv[] )
    SSmethod *ss = new SSmethod();
    ss->SetLumi(35.9);
 
-   ///////////////////////////////////
-   // Fill control histos           //
-   ///////////////////////////////////
-   ss->FillDataMCPlots(Data);
-   ss->FillDataMCPlots(WZ);
-   ss->FillDataMCPlots(ZZ);
-   ss->FillDataMCPlots(ttbar);
-   ss->FillDataMCPlots(DY);
-   ss->SaveDataMCHistos("DataMC_SS.root");
+//   ///////////////////////////////////
+//   // Fill control histos           //
+//   ///////////////////////////////////
+//   ss->FillDataMCPlots(Data);
+//   ss->FillDataMCPlots(WZ);
+//   ss->FillDataMCPlots(ZZ);
+//   ss->FillDataMCPlots(ttbar);
+//   ss->FillDataMCPlots(DY);
+//   ss->SaveDataMCHistos("DataMC_SS.root");
 
    ///////////////////////////////////
    // Fill passing/failling histos  //
@@ -64,28 +64,28 @@ int main( int argc, char *argv[] )
    ss->Set_pT_binning(8, pT_bins);
    ss->ProduceFakeRates("FakeRates_SS_Moriond17.root", Data);
 	
-   ///////////////////////////////////
-   // Calculate OS/SS ratios        //
-   ///////////////////////////////////
-   ss->Calculate_SSOS_Ratio( Data, ZZ, SubtractMCContribution);
-
-   ///////////////////////////////////
-   // Fill ZX contributions histos  //
-   ///////////////////////////////////
-   ss->MakeHistogramsZX(Data, FakeRates);
-   ss->SaveZXHistos("ZXHistos_SS.root");
-
-   ///////////////////////////////////
-   // Plot control plots            //
-   ///////////////////////////////////
-   ss->GetDataMCHistos("DataMC_SS.root");
-   ss->PlotDataMC( "M4l", "Plots" );
-
-   ///////////////////////////////////
-   // Plot Z+X plots                //
-   ///////////////////////////////////
-   ss->GetZXHistos("ZXHistos_SS.root");
-   ss->PlotZX("M4l", "Plots");
+//   ///////////////////////////////////
+//   // Calculate OS/SS ratios        //
+//   ///////////////////////////////////
+//   ss->Calculate_SSOS_Ratio( Data, ZZ, SubtractMCContribution);
+//
+//   ///////////////////////////////////
+//   // Fill ZX contributions histos  //
+//   ///////////////////////////////////
+//   ss->MakeHistogramsZX(Data, FakeRates);
+//   ss->SaveZXHistos("ZXHistos_SS.root");
+//
+//   ///////////////////////////////////
+//   // Plot control plots            //
+//   ///////////////////////////////////
+//   ss->GetDataMCHistos("DataMC_SS.root");
+//   ss->PlotDataMC( "M4l", "Plots" );
+//
+//   ///////////////////////////////////
+//   // Plot Z+X plots                //
+//   ///////////////////////////////////
+//   ss->GetZXHistos("ZXHistos_SS.root");
+//   ss->PlotZX("M4l", "Plots");
 	
    delete ss;
 }

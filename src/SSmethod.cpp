@@ -245,13 +245,24 @@ void SSmethod::FillFRHistos( TString input_file_data_name )
    Long64_t nbytes = 0, nb = 0;
 
    // Define some counters for control print out
-	Int_t _total_events = 0;
-	Int_t _failZ1MassCut = 0;
-	Int_t _failLepPtCut = 0;
-	Int_t _failSIPCut = 0;
-	Int_t _failMETCut = 0;
-	Int_t _passingSelection = 0;
-	Int_t _faillingSelection = 0;
+	Int_t _total_events[num_of_final_states];
+	Int_t _failZ1MassCut[num_of_final_states];
+	Int_t _failLepPtCut[num_of_final_states];
+	Int_t _failSIPCut[num_of_final_states];
+	Int_t _failMETCut[num_of_final_states];
+	Int_t _passingSelection[num_of_final_states];
+	Int_t _faillingSelection[num_of_final_states];
+	
+	for (int i_fs = 0; i_fs < num_of_final_states; i_fs++)
+	{
+		_total_events[i_fs] = 0.;
+		_failZ1MassCut[i_fs] = 0.;
+		_failLepPtCut[i_fs] = 0.;
+		_failSIPCut[i_fs] = 0.;
+		_failMETCut[i_fs] = 0.;
+		_passingSelection[i_fs] = 0.;
+		_faillingSelection[i_fs] = 0.;
+	}
 
    for (Long64_t jentry=0; jentry<nentries;jentry++)
    {
@@ -260,14 +271,14 @@ void SSmethod::FillFRHistos( TString input_file_data_name )
       nb = fChain->GetEntry(jentry);
       nbytes += nb;
 
-	   _total_events++;
+		(fabs(LepLepId->at(2)) == 11) ? _total_events[Settings::ele]++ : _total_events[Settings::mu]++;
 	   
-	   if ( Z1Mass < 40. ) {_failZ1MassCut++; continue;}
-	   if ( Z1Mass > 120. ) {_failZ1MassCut++; continue;}
-	   if ( (LepPt->at(0) > LepPt->at(1)) && (LepPt->at(0) < 20. || LepPt->at(1) < 10.) ) {_failLepPtCut++; continue;}
-	   if ( (LepPt->at(1) > LepPt->at(0)) && (LepPt->at(1) < 20. || LepPt->at(0) < 10.) ) {_failLepPtCut++; continue;}
-	   if ( LepSIP->at(2) > 4.) {_failSIPCut++; continue;}
-	   if ( PFMET > 25. ) {_failMETCut++; continue;}
+		if ( Z1Mass < 40. ) {(fabs(LepLepId->at(2)) == 11) ? _failZ1MassCut[Settings::ele]++ : _failZ1MassCut[Settings::mu]++; continue;}
+	   if ( Z1Mass > 120. ) {(fabs(LepLepId->at(2)) == 11) ? _failZ1MassCut[Settings::ele]++ : _failZ1MassCut[Settings::mu]++; continue;}
+	   if ( (LepPt->at(0) > LepPt->at(1)) && (LepPt->at(0) < 20. || LepPt->at(1) < 10.) ) {(fabs(LepLepId->at(2)) == 11) ? _failLepPtCut[Settings::ele]++ : _failLepPtCut[Settings::mu]++; continue;}
+	   if ( (LepPt->at(1) > LepPt->at(0)) && (LepPt->at(1) < 20. || LepPt->at(0) < 10.) ) {(fabs(LepLepId->at(2)) == 11) ? _failLepPtCut[Settings::ele]++ : _failLepPtCut[Settings::mu]++; continue;}
+	   if ( LepSIP->at(2) > 4.) {(fabs(LepLepId->at(2)) == 11) ? _failSIPCut[Settings::ele]++ : _failSIPCut[Settings::mu]++; continue;}
+	   if ( PFMET > 25. ) {(fabs(LepLepId->at(2)) == 11) ? _failMETCut[Settings::ele]++ : _failMETCut[Settings::mu]++; continue;}
       else
 	   {
          // Final event weight
@@ -276,13 +287,13 @@ void SSmethod::FillFRHistos( TString input_file_data_name )
 
          if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35)
          {
-			 _passingSelection++;
+				(fabs(LepLepId->at(2)) == 11) ? _passingSelection[Settings::ele]++ : _passingSelection[Settings::mu]++;
             if(fabs(LepLepId->at(2)) == 11 ) passing[_current_process][Settings::ele]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.479) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
             else if(fabs(LepLepId->at(2)) == 13 ) passing[_current_process][Settings::mu]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.2) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
          }
          else
          {
-			 _faillingSelection++;
+				(fabs(LepLepId->at(2)) == 11) ? _faillingSelection[Settings::ele]++ : _faillingSelection[Settings::mu]++;
             if(fabs(LepLepId->at(2)) == 11 ) failing[_current_process][Settings::ele]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.479) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
             else if(fabs(LepLepId->at(2)) == 13 ) failing[_current_process][Settings::mu]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.2) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
          }
@@ -294,16 +305,31 @@ void SSmethod::FillFRHistos( TString input_file_data_name )
 	{
 		cout << endl;
 		cout << "========================================================================================" << endl;
-		cout << "[INFO] Control printout for Z+L control region." << endl;
+		cout << "[INFO] Control printout for electrons in Z+L control region." << endl;
 		cout << "========================================================================================" << endl;
-		cout << "[INFO] Total number of events in Z+L control region = " << _total_events << endl;
-		cout << "[INFO] Events lost after 40 < Z1 < 120 GeV cut  = " << _failZ1MassCut << endl;
-		cout << "[INFO] Events lost after LepPt > 20,10 GeV cut  = " << _failLepPtCut << endl;
-		cout << "[INFO] Events lost after SIP < 4 cut  = " << _failSIPCut << endl;
-		cout << "[INFO] Events lost after MET < 25 cut  = " << _failMETCut << endl;
-		cout << "[INFO] Total events left = " << _passingSelection + _faillingSelection << endl;
-		cout << "[INFO] Passing selection = " << _passingSelection  << endl;
-		cout << "[INFO] Failling selection = " << _faillingSelection << endl;
+		cout << "[INFO] Total number of events in Z+L control region = " << _total_events[Settings::ele] << endl;
+		cout << "[INFO] Events after 40 < Z1 < 120 GeV cut  = " << _total_events[Settings::ele] - _failZ1MassCut[Settings::ele] << endl;
+		cout << "[INFO] Events after LepPt > 20,10 GeV cut  = " << _total_events[Settings::ele] - _failZ1MassCut[Settings::ele] - _failLepPtCut[Settings::ele] << endl;
+		cout << "[INFO] Events after SIP < 4 cut  = " << _total_events[Settings::ele] - _failZ1MassCut[Settings::ele] - _failLepPtCut[Settings::ele] - _failSIPCut[Settings::ele] << endl;
+		cout << "[INFO] Events after MET < 25 cut  = " << _total_events[Settings::ele] - _failZ1MassCut[Settings::ele] - _failLepPtCut[Settings::ele] - _failSIPCut[Settings::ele] - _failMETCut[Settings::ele] << endl;
+		cout << "[INFO] Total events left = " << _passingSelection[Settings::ele] + _faillingSelection[Settings::ele] << endl;
+		cout << "[INFO] Passing selection = " << _passingSelection[Settings::ele]  << endl;
+		cout << "[INFO] Failling selection = " << _faillingSelection[Settings::ele] << endl;
+		cout << "========================================================================================" << endl;
+		cout << endl;
+		
+		cout << endl;
+		cout << "========================================================================================" << endl;
+		cout << "[INFO] Control printout for muons in Z+L control region." << endl;
+		cout << "========================================================================================" << endl;
+		cout << "[INFO] Total number of events in Z+L control region = " << _total_events[Settings::mu] << endl;
+		cout << "[INFO] Events after 40 < Z1 < 120 GeV cut  = " << _total_events[Settings::mu] - _failZ1MassCut[Settings::mu] << endl;
+		cout << "[INFO] Events after LepPt > 20,10 GeV cut  = " << _total_events[Settings::mu] - _failZ1MassCut[Settings::mu] - _failLepPtCut[Settings::mu] << endl;
+		cout << "[INFO] Events after SIP < 4 cut  = " << _total_events[Settings::mu] - _failZ1MassCut[Settings::mu] - _failLepPtCut[Settings::mu] - _failSIPCut[Settings::mu] << endl;
+		cout << "[INFO] Events after MET < 25 cut  = " << _total_events[Settings::mu] - _failZ1MassCut[Settings::mu] - _failLepPtCut[Settings::mu] - _failSIPCut[Settings::mu] - _failMETCut[Settings::mu] << endl;
+		cout << "[INFO] Total events left = " << _passingSelection[Settings::mu] + _faillingSelection[Settings::mu] << endl;
+		cout << "[INFO] Passing selection = " << _passingSelection[Settings::mu]  << endl;
+		cout << "[INFO] Failling selection = " << _faillingSelection[Settings::mu] << endl;
 		cout << "========================================================================================" << endl;
 		cout << endl;
 	}

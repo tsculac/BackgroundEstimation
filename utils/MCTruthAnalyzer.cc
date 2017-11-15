@@ -17,6 +17,7 @@
 #include "TSystem.h"
 #include "TTree.h"
 #include "TGraphErrors.h"
+#include "TMultiGraph.h"
 
 using namespace std;
 
@@ -31,7 +32,18 @@ enum LeptonFlavours
 };
 
 float pT_bins[] = {5, 7, 10, 20, 30, 40, 50, 80};
-int _n_pT_bins = 8;
+int _n_pT_bins = 7;
+
+TH1D* h_LepPT[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
+TH1D* h_JetbTagger[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
+TH1D* h_LepSIP[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
+TH1D* h_LepBDT[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
+TH1D* h_LepMissingHit[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
+TString histo_name;
+TH2F* passingSEL[LeptonFlavours::NUM_OF_FLAVOURS][2];
+TH2F* faillingSEL[LeptonFlavours::NUM_OF_FLAVOURS][2];
+int n_events[LeptonFlavours::NUM_OF_FLAVOURS][2];
+int n_events_afterCuts[LeptonFlavours::NUM_OF_FLAVOURS][2];
 
 int matchFlavour(int MatchJetPartonFlavour, int GenMCTruthMatchId, int GenMCTruthMatchMotherId)
 {
@@ -83,13 +95,15 @@ TGraphErrors* makeFRgraph(int flav, TString eta, TH2F *passing, TH2F *failing)
 	RemoveNegativeBins2D(passing);
 	RemoveNegativeBins2D(failing);
 	
-	for(int i_pT_bin = 0; i_pT_bin < _n_pT_bins - 1; i_pT_bin++ )
+	for(int i_pT_bin = 0; i_pT_bin < _n_pT_bins; i_pT_bin++ )
 	{
 		double temp_NP = 0;
 		double temp_NF = 0;
 		double temp_error_x = 0;
 		double temp_error_NP = 0;
 		double temp_error_NF = 0;
+		double fake_rate = 0;
+		double sigma = 0;
 		
 		if ( flav == 0 && i_pT_bin == 0) continue; // electrons do not have 5 - 7 GeV bin
 		
@@ -97,13 +111,18 @@ TGraphErrors* makeFRgraph(int flav, TString eta, TH2F *passing, TH2F *failing)
 		temp_NF = failing->IntegralAndError(failing->GetXaxis()->FindBin(pT_bins[i_pT_bin]),failing->GetXaxis()->FindBin(pT_bins[i_pT_bin+1]) - 1, eta_bin, eta_bin, temp_error_NF);
 		
 		vector_X.push_back((pT_bins[i_pT_bin] + pT_bins[i_pT_bin + 1])/2);
-		if ( temp_NP == 0) vector_Y.push_back(0.);
-		else if ( temp_NF == 0) vector_Y.push_back(1.);
-		else vector_Y.push_back(temp_NP/(temp_NP+temp_NF));
-		
 		vector_EX.push_back((pT_bins[i_pT_bin + 1] - pT_bins[i_pT_bin])/2);
-		if ( temp_NP == 0 || temp_NF== 0) vector_EY.push_back(0.);
-		else vector_EY.push_back(sqrt(pow((temp_NF/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NP,2) + pow((temp_NP/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NF,2)));
+		
+		if ( temp_NP == 0) fake_rate = 0.;
+		else if ( temp_NF == 0) fake_rate = 1.;
+		else fake_rate = temp_NP/(temp_NP+temp_NF);
+		vector_Y.push_back(fake_rate);
+		
+		
+		if ( temp_NP == 0 || temp_NF== 0) sigma = 0.;
+		else sigma = sqrt(pow((temp_NF/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NP,2) + pow((temp_NP/pow(temp_NF+temp_NP,2)),2)*pow(temp_error_NF,2));
+		if ( sigma > fake_rate ) sigma = fake_rate;
+		vector_EY.push_back(sigma);
 	}
 	
 	fr = new TGraphErrors(vector_X.size(), &(vector_X[0]),&(vector_Y[0]),&(vector_EX[0]),&(vector_EY[0]));
@@ -111,21 +130,12 @@ TGraphErrors* makeFRgraph(int flav, TString eta, TH2F *passing, TH2F *failing)
 	
 }
 
-void MCTruthAnalyzer()
+void LoopCRZL(TString input_file_name)
 {
-	gROOT->ProcessLine(".L ./ext/setTDRStyle_cpp.so");
-	gROOT->ProcessLine("setTDRStyle();");
-	gROOT->SetBatch();
-	
-	TString path = "NewData/";
-	TString file_name = "/ZZ4lAnalysis.root";
-	
-	TString DY      = path + "DYJetsToLL_M50" + file_name;
-	
-	TFile* DY_file = TFile::Open(DY);
-	TTree* DY_Tree = (TTree*) DY_file->Get("CRZLTree/candTree");
-	int  nentries = DY_Tree->GetEntries();
-	TH1F* hCounters = (TH1F*)DY_file->Get("CRZLTree/Counters");
+	TFile* _file = TFile::Open(input_file_name);
+	TTree* _Tree = (TTree*)_file->Get("CRZLTree/candTree");
+	int  nentries = _Tree->GetEntries();
+	TH1F* hCounters = (TH1F*)_file->Get("CRZLTree/Counters");
 	Long64_t gen_sum_weights = (Long64_t)hCounters->GetBinContent(40);
 	
 	Float_t PFMET;
@@ -165,74 +175,152 @@ void MCTruthAnalyzer()
 	vector<short> 	 *GenMCTruthMatchId = 0;
 	vector<short> 	 *GenMCTruthMatchMotherId = 0;
 	
-	DY_Tree->SetBranchAddress("PFMET",&PFMET);
-	DY_Tree->SetBranchAddress("Z1Mass",&Z1Mass);
-	DY_Tree->SetBranchAddress("Z1Flav",&Z1Flav);
-	DY_Tree->SetBranchAddress("LepPt",&LepPt);
-	DY_Tree->SetBranchAddress("LepEta",&LepEta);
-	DY_Tree->SetBranchAddress("LepPhi",&LepPhi);
-	DY_Tree->SetBranchAddress("LepLepId",&LepLepId);
-	DY_Tree->SetBranchAddress("LepSIP",&LepSIP);
-	DY_Tree->SetBranchAddress("LepBDT",&LepBDT);
-	DY_Tree->SetBranchAddress("LepisID",&LepisID);
-	DY_Tree->SetBranchAddress("LepCombRelIsoPF",&LepCombRelIsoPF);
-	DY_Tree->SetBranchAddress("LepMissingHit", &LepMissingHit);
-	DY_Tree->SetBranchAddress("passIsoPreFSR",&passIsoPreFSR);
-	DY_Tree->SetBranchAddress("JetPt",&JetPt);
-	DY_Tree->SetBranchAddress("JetEta",&JetEta);
-	DY_Tree->SetBranchAddress("JetPhi",&JetPhi);
-	DY_Tree->SetBranchAddress("JetMass",&JetMass);
-	DY_Tree->SetBranchAddress("JetBTagger",&JetBTagger);
-	DY_Tree->SetBranchAddress("JetIsBtagged",&JetIsBtagged);
-	DY_Tree->SetBranchAddress("JetIsBtaggedWithSF",&JetIsBtaggedWithSF);
-	DY_Tree->SetBranchAddress("JetQGLikelihood",&JetQGLikelihood);
-	DY_Tree->SetBranchAddress("JetAxis2",&JetAxis2);
-	DY_Tree->SetBranchAddress("JetMult",&JetMult);
-	DY_Tree->SetBranchAddress("JetPtD",&JetPtD);
-	DY_Tree->SetBranchAddress("JetSigma",&JetSigma);
-	DY_Tree->SetBranchAddress("MatchJetPartonFlavour",&MatchJetPartonFlavour);
-	DY_Tree->SetBranchAddress("MatchJetbTagger",&MatchJetbTagger);
-	DY_Tree->SetBranchAddress("genHEPMCweight",&genHEPMCweight);
-	DY_Tree->SetBranchAddress("PUWeight",&PUWeight);
-	DY_Tree->SetBranchAddress("dataMCWeight",&dataMCWeight);
-	DY_Tree->SetBranchAddress("trigEffWeight",&trigEffWeight);
-	DY_Tree->SetBranchAddress("overallEventWeight",&overallEventWeight);
-	DY_Tree->SetBranchAddress("HqTMCweight",&HqTMCweight);
-	DY_Tree->SetBranchAddress("xsec",&xsec);
-	DY_Tree->SetBranchAddress("GenMCTruthMatchId",&GenMCTruthMatchId);
-	DY_Tree->SetBranchAddress("GenMCTruthMatchMotherId",&GenMCTruthMatchMotherId);
+	_Tree->SetBranchAddress("PFMET",&PFMET);
+	_Tree->SetBranchAddress("Z1Mass",&Z1Mass);
+	_Tree->SetBranchAddress("Z1Flav",&Z1Flav);
+	_Tree->SetBranchAddress("LepPt",&LepPt);
+	_Tree->SetBranchAddress("LepEta",&LepEta);
+	_Tree->SetBranchAddress("LepPhi",&LepPhi);
+	_Tree->SetBranchAddress("LepLepId",&LepLepId);
+	_Tree->SetBranchAddress("LepSIP",&LepSIP);
+	_Tree->SetBranchAddress("LepBDT",&LepBDT);
+	_Tree->SetBranchAddress("LepisID",&LepisID);
+	_Tree->SetBranchAddress("LepCombRelIsoPF",&LepCombRelIsoPF);
+	_Tree->SetBranchAddress("LepMissingHit", &LepMissingHit);
+	_Tree->SetBranchAddress("passIsoPreFSR",&passIsoPreFSR);
+	_Tree->SetBranchAddress("JetPt",&JetPt);
+	_Tree->SetBranchAddress("JetEta",&JetEta);
+	_Tree->SetBranchAddress("JetPhi",&JetPhi);
+	_Tree->SetBranchAddress("JetMass",&JetMass);
+	_Tree->SetBranchAddress("JetBTagger",&JetBTagger);
+	_Tree->SetBranchAddress("JetIsBtagged",&JetIsBtagged);
+	_Tree->SetBranchAddress("JetIsBtaggedWithSF",&JetIsBtaggedWithSF);
+	_Tree->SetBranchAddress("JetQGLikelihood",&JetQGLikelihood);
+	_Tree->SetBranchAddress("JetAxis2",&JetAxis2);
+	_Tree->SetBranchAddress("JetMult",&JetMult);
+	_Tree->SetBranchAddress("JetPtD",&JetPtD);
+	_Tree->SetBranchAddress("JetSigma",&JetSigma);
+	_Tree->SetBranchAddress("MatchJetPartonFlavour",&MatchJetPartonFlavour);
+	_Tree->SetBranchAddress("MatchJetbTagger",&MatchJetbTagger);
+	_Tree->SetBranchAddress("genHEPMCweight",&genHEPMCweight);
+	_Tree->SetBranchAddress("PUWeight",&PUWeight);
+	_Tree->SetBranchAddress("dataMCWeight",&dataMCWeight);
+	_Tree->SetBranchAddress("trigEffWeight",&trigEffWeight);
+	_Tree->SetBranchAddress("overallEventWeight",&overallEventWeight);
+	_Tree->SetBranchAddress("HqTMCweight",&HqTMCweight);
+	_Tree->SetBranchAddress("xsec",&xsec);
+	_Tree->SetBranchAddress("GenMCTruthMatchId",&GenMCTruthMatchId);
+	_Tree->SetBranchAddress("GenMCTruthMatchMotherId",&GenMCTruthMatchMotherId);
 	
 	int jet_category = -1;
 	int lep_flavour = -1;
 	int lep_EBorEE = -1;
 	
-	TH1D* h_LepPT[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
-	TH1D* h_JetbTagger[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
-	TH1D* h_LepSIP[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
-	TH1D* h_LepBDT[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
-	TH1D* h_LepMissingHit[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
-	TString histo_name;
+	for (int i_jf = 0; i_jf < LeptonFlavours::NUM_OF_FLAVOURS; i_jf++)
+	{
+		n_events[i_jf][0] = 0;
+		n_events_afterCuts[i_jf][0] = 0;
+		n_events[i_jf][1] = 0;
+		n_events_afterCuts[i_jf][1] = 0;
+	}
 	
-	TH2F* passingSEL[LeptonFlavours::NUM_OF_FLAVOURS][2];
-	TH2F* faillingSEL[LeptonFlavours::NUM_OF_FLAVOURS][2];
+	for(int i_event = 0; i_event < nentries; i_event++)
+	{
+		_Tree->GetEvent(i_event);
+		
+		//Determine lepton origin
+		jet_category = matchFlavour(MatchJetPartonFlavour->at(2), GenMCTruthMatchId->at(2), GenMCTruthMatchMotherId->at(2));
+		lep_flavour = (fabs(LepLepId->at(2)) == 11) ? 0 : 1;
+		if(lep_flavour == 0 && (abs(LepEta->at(2)) < 1.479) )  lep_EBorEE = 0;
+		if(lep_flavour == 0 && (abs(LepEta->at(2)) >= 1.479) ) lep_EBorEE = 1;
+		if(lep_flavour == 1 && (abs(LepEta->at(2)) < 1.2) )    lep_EBorEE = 0;
+		if(lep_flavour == 1 && (abs(LepEta->at(2)) >= 1.2) )   lep_EBorEE = 1;
+		
+		
+		n_events[jet_category][lep_flavour]++;
+		
+		// Calculate fake rates
+		if ( Z1Mass < 40. ) {continue;}
+		if ( Z1Mass > 120. ) {continue;}
+		if ( (LepPt->at(0) > LepPt->at(1)) && (LepPt->at(0) < 20. || LepPt->at(1) < 10.) ) {continue;}
+		if ( (LepPt->at(1) > LepPt->at(0)) && (LepPt->at(1) < 20. || LepPt->at(0) < 10.) ) {continue;}
+		if ( LepSIP->at(2) > 4.) {continue;}
+		if ( PFMET > 25. ) {continue;}
+		if ( LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35 )
+		{
+			if (fabs(LepLepId->at(2)) == 11) passingSEL[jet_category][0]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.479) ? 0.5 : 1.5, overallEventWeight);
+			if (fabs(LepLepId->at(2)) == 13) passingSEL[jet_category][1]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.2) ? 0.5 : 1.5, overallEventWeight);
+		}
+		else
+		{
+			if (fabs(LepLepId->at(2)) == 11) faillingSEL[jet_category][0]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.479) ? 0.5 : 1.5, overallEventWeight);
+			if (fabs(LepLepId->at(2)) == 13) faillingSEL[jet_category][1]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.2) ? 0.5 : 1.5, overallEventWeight);
+		}
+		
+		// Fill distributions
+		h_LepPT[jet_category][lep_flavour][lep_EBorEE]->Fill(LepPt->at(2), overallEventWeight);
+		h_JetbTagger[jet_category][lep_flavour][lep_EBorEE]->Fill(MatchJetbTagger->at(2), overallEventWeight);
+		h_LepBDT[jet_category][lep_flavour][lep_EBorEE]->Fill(LepBDT->at(2), overallEventWeight);
+		h_LepSIP[jet_category][lep_flavour][lep_EBorEE]->Fill(LepSIP->at(2), overallEventWeight);
+		
+		n_events_afterCuts[jet_category][lep_flavour]++;
+	}
 	
-	int n_events[LeptonFlavours::NUM_OF_FLAVOURS];
-	int n_events_afterCuts[LeptonFlavours::NUM_OF_FLAVOURS];
-	
-	TFile* fOutHistos = new TFile("output.root", "recreate");
-	fOutHistos->cd();
-	
+	cout << "==========================================================================================" << endl;
+	cout << "[INFO] Control printout for " << input_file_name << endl;
+	cout << "==========================================================================================" << endl;
+	cout << "[INFO] Total number of electrons BEFORE cuts = " << n_events[LeptonFlavours::Conversion][0] + n_events[LeptonFlavours::NoMatch][0] + n_events[LeptonFlavours::LightJet][0] + n_events[LeptonFlavours::HeavyJet][0] + n_events[LeptonFlavours::Lepton][0] << endl;
+	cout << "[INFO] Number of electrons matched to leptons = " << n_events[LeptonFlavours::Lepton][0] << endl;
+	cout << "[INFO] Number of electrons matched to photons = " << n_events[LeptonFlavours::Conversion][0] << endl;
+	cout << "[INFO] Number of electrons not matched to jet = " << n_events[LeptonFlavours::NoMatch][0] << endl;
+	cout << "[INFO] Number of electrons matched to light jet = " << n_events[LeptonFlavours::LightJet][0] << endl;
+	cout << "[INFO] Number of electrons matched to heavy jet = " << n_events[LeptonFlavours::HeavyJet][0] << endl;
+	cout << "============================================================" << endl;
+	cout << "[INFO] Total number of muons BEFORE cuts = " << n_events[LeptonFlavours::Conversion][1] + n_events[LeptonFlavours::NoMatch][1] + n_events[LeptonFlavours::LightJet][1] + n_events[LeptonFlavours::HeavyJet][1] + n_events[LeptonFlavours::Lepton][1] << endl;
+	cout << "[INFO] Number of muons matched to leptons = " << n_events[LeptonFlavours::Lepton][1] << endl;
+	cout << "[INFO] Number of muons matched to photons = " << n_events[LeptonFlavours::Conversion][1] << endl;
+	cout << "[INFO] Number of muons not matched to jet = " << n_events[LeptonFlavours::NoMatch][1] << endl;
+	cout << "[INFO] Number of muons matched to light jet = " << n_events[LeptonFlavours::LightJet][1] << endl;
+	cout << "[INFO] Number of muons matched to heavy jet = " << n_events[LeptonFlavours::HeavyJet][1] << endl;
+	cout << "============================================================" << endl;
+	cout << "[INFO] Total number of electrons AFTER cuts = " << n_events_afterCuts[LeptonFlavours::Conversion][0] + n_events_afterCuts[LeptonFlavours::NoMatch][0] + n_events_afterCuts[LeptonFlavours::LightJet][0] + n_events_afterCuts[LeptonFlavours::HeavyJet][0] + n_events_afterCuts[LeptonFlavours::Lepton][0] << endl;
+	cout << "[INFO] Number of electrons matched to leptons = " << n_events_afterCuts[LeptonFlavours::Lepton][0] << endl;
+	cout << "[INFO] Number of electrons matched to photons = " << n_events_afterCuts[LeptonFlavours::Conversion][0] << endl;
+	cout << "[INFO] Number of electrons not matched to jet = " << n_events_afterCuts[LeptonFlavours::NoMatch][0] << endl;
+	cout << "[INFO] Number of electrons matched to light jet = " << n_events_afterCuts[LeptonFlavours::LightJet][0] << endl;
+	cout << "[INFO] Number of electrons matched to heavy jet = " << n_events_afterCuts[LeptonFlavours::HeavyJet][0] << endl;
+	cout << "============================================================" << endl;
+	cout << "[INFO] Total number of muons AFTER cuts = " << n_events_afterCuts[LeptonFlavours::Conversion][1] + n_events_afterCuts[LeptonFlavours::NoMatch][1] + n_events_afterCuts[LeptonFlavours::LightJet][1] + n_events_afterCuts[LeptonFlavours::HeavyJet][1] + n_events_afterCuts[LeptonFlavours::Lepton][1] << endl;
+	cout << "[INFO] Number of muons matched to leptons = " << n_events_afterCuts[LeptonFlavours::Lepton][1] << endl;
+	cout << "[INFO] Number of muons matched to photons = " << n_events_afterCuts[LeptonFlavours::Conversion][1] << endl;
+	cout << "[INFO] Number of muons not matched to jet = " << n_events_afterCuts[LeptonFlavours::NoMatch][1] << endl;
+	cout << "[INFO] Number of muons matched to light jet = " << n_events_afterCuts[LeptonFlavours::LightJet][1] << endl;
+	cout << "[INFO] Number of muons matched to heavy jet = " << n_events_afterCuts[LeptonFlavours::HeavyJet][1] << endl;
+	cout << "============================================================" << endl;
+}
 
+
+void MCTruthAnalyzer()
+{
+	gROOT->SetBatch();
+	
+	TString path = "NewData/";
+	TString file_name = "/ZZ4lAnalysis.root";
+	
+	TString DY       = path + "DYJetsToLL_M50"     + file_name;
+	TString TTJets   = path + "TTJets_DiLept_ext1" + file_name;
+	TString WZTo3LNu = path + "WZTo3LNu"           + file_name;
+	
 	for (int i_jf = 0; i_jf < LeptonFlavours::NUM_OF_FLAVOURS; i_jf++)
 	{
 		histo_name ="h_LepPT_ele_EE_"+to_string(i_jf);
-		h_LepPT[i_jf][0][0] = new TH1D(histo_name,histo_name,8, 5.,85.);
+		h_LepPT[i_jf][0][0] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
 		histo_name ="h_LepPT_ele_EB_"+to_string(i_jf);
-		h_LepPT[i_jf][0][1] = new TH1D(histo_name,histo_name,8, 5.,85.);
+		h_LepPT[i_jf][0][1] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
 		histo_name ="h_LepPT_mu_EE_"+to_string(i_jf);
-		h_LepPT[i_jf][1][0] = new TH1D(histo_name,histo_name,8, 5.,85.);
+		h_LepPT[i_jf][1][0] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
 		histo_name ="h_LepPT_mu_EB_"+to_string(i_jf);
-		h_LepPT[i_jf][1][1] = new TH1D(histo_name,histo_name,8, 5.,85.);
+		h_LepPT[i_jf][1][1] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
 		
 		histo_name ="h_LepbTag_ele_EE_"+to_string(i_jf);
 		h_JetbTagger[i_jf][0][0] = new TH1D(histo_name,histo_name,20, -1., 1.);
@@ -260,7 +348,7 @@ void MCTruthAnalyzer()
 		h_LepBDT[i_jf][1][0] = new TH1D(histo_name,histo_name,20, -1., 1.);
 		histo_name ="h_LepBDT_mu_EB_"+to_string(i_jf);
 		h_LepBDT[i_jf][1][1] = new TH1D(histo_name,histo_name,20, -1., 1.);
-
+		
 		
 		histo_name = "Passing_ele_" + to_string(i_jf);
 		passingSEL[i_jf][0] = new TH2F(histo_name,"", 80, 0, 80, 2, 0, 2);
@@ -271,70 +359,11 @@ void MCTruthAnalyzer()
 		passingSEL[i_jf][1] = new TH2F(histo_name,"", 80, 0, 80, 2, 0, 2);
 		histo_name = "Failing_mu_" + to_string(i_jf);
 		faillingSEL[i_jf][1] = new TH2F(histo_name,"", 80, 0, 80, 2, 0, 2);
-		
-		n_events[i_jf] = 0;
-		n_events_afterCuts[i_jf] = 0;
-	}
-
-	for(int i_event = 0; i_event < nentries; i_event++)
-	{
-		DY_Tree->GetEvent(i_event);
-		
-		//Determine lepton origin
-		jet_category = matchFlavour(MatchJetPartonFlavour->at(2), GenMCTruthMatchId->at(2), GenMCTruthMatchMotherId->at(2));
-		lep_flavour = (fabs(LepLepId->at(2)) == 11) ? 0 : 1;
-		if(lep_flavour == 0 && (abs(LepEta->at(2)) < 1.479) )  lep_EBorEE = 0;
-		if(lep_flavour == 0 && (abs(LepEta->at(2)) >= 1.479) ) lep_EBorEE = 1;
-		if(lep_flavour == 1 && (abs(LepEta->at(2)) < 1.2) )    lep_EBorEE = 0;
-		if(lep_flavour == 1 && (abs(LepEta->at(2)) >= 1.2) )   lep_EBorEE = 1;
-		
-
-		n_events[jet_category]++;
-		
-		// Calculate fake rates
-		if ( Z1Mass < 40. ) {continue;}
-		if ( Z1Mass > 120. ) {continue;}
-		if ( (LepPt->at(0) > LepPt->at(1)) && (LepPt->at(0) < 20. || LepPt->at(1) < 10.) ) {continue;}
-		if ( (LepPt->at(1) > LepPt->at(0)) && (LepPt->at(1) < 20. || LepPt->at(0) < 10.) ) {continue;}
-		if ( LepSIP->at(2) > 4.) {continue;}
-		if ( PFMET > 25. ) {continue;}
-		if ( LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35 )
-		{
-			if (fabs(LepLepId->at(2)) == 11) passingSEL[jet_category][0]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.479) ? 0.5 : 1.5, overallEventWeight);
-			if (fabs(LepLepId->at(2)) == 13) passingSEL[jet_category][1]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.2) ? 0.5 : 1.5, overallEventWeight);
-		}
-		else
-		{
-			if (fabs(LepLepId->at(2)) == 11) faillingSEL[jet_category][0]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.479) ? 0.5 : 1.5, overallEventWeight);
-			if (fabs(LepLepId->at(2)) == 13) faillingSEL[jet_category][1]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.2) ? 0.5 : 1.5, overallEventWeight);
-		}
-		
-		// Fill distributions
-		h_LepPT[jet_category][lep_flavour][lep_EBorEE]->Fill(LepPt->at(2), overallEventWeight);
-		h_JetbTagger[jet_category][lep_flavour][lep_EBorEE]->Fill(MatchJetbTagger->at(2), overallEventWeight);
-		h_LepBDT[jet_category][lep_flavour][lep_EBorEE]->Fill(LepBDT->at(2), overallEventWeight);
-		h_LepSIP[jet_category][lep_flavour][lep_EBorEE]->Fill(LepSIP->at(2), overallEventWeight);
-		
-		n_events_afterCuts[jet_category]++;
 	}
 	
-	cout << "==============================" << endl;
-	cout << "[INFO] Control printout " << endl;
-	cout << "==============================" << endl;
-	cout << "[INFO] Total number of events BEFORE cuts = " << n_events[LeptonFlavours::Conversion] + n_events[LeptonFlavours::NoMatch] + n_events[LeptonFlavours::LightJet] + n_events[LeptonFlavours::HeavyJet] + n_events[LeptonFlavours::Lepton] << endl;
-	cout << "[INFO] Number of events matched to leptons = " << n_events[LeptonFlavours::Lepton] << endl;
-	cout << "[INFO] Number of events matched to photons = " << n_events[LeptonFlavours::Conversion] << endl;
-	cout << "[INFO] Number of events not matched to jet = " << n_events[LeptonFlavours::NoMatch] << endl;
-	cout << "[INFO] Number of events matched to light jet = " << n_events[LeptonFlavours::LightJet] << endl;
-	cout << "[INFO] Number of events matched to heavy jet = " << n_events[LeptonFlavours::HeavyJet] << endl;
-	cout << "============================================================" << endl;
-	cout << "[INFO] Total number of events AFTER cuts = " << n_events_afterCuts[LeptonFlavours::Conversion] + n_events_afterCuts[LeptonFlavours::NoMatch] + n_events_afterCuts[LeptonFlavours::LightJet] + n_events_afterCuts[LeptonFlavours::HeavyJet] + n_events_afterCuts[LeptonFlavours::Lepton] << endl;
-	cout << "[INFO] Number of events matched to leptons = " << n_events_afterCuts[LeptonFlavours::Lepton] << endl;
-	cout << "[INFO] Number of events matched to photons = " << n_events_afterCuts[LeptonFlavours::Conversion] << endl;
-	cout << "[INFO] Number of events not matched to jet = " << n_events_afterCuts[LeptonFlavours::NoMatch] << endl;
-	cout << "[INFO] Number of events matched to light jet = " << n_events_afterCuts[LeptonFlavours::LightJet] << endl;
-	cout << "[INFO] Number of events matched to heavy jet = " << n_events_afterCuts[LeptonFlavours::HeavyJet] << endl;
-	cout << "============================================================" << endl;
+	LoopCRZL(DY);
+	LoopCRZL(TTJets);
+	LoopCRZL(WZTo3LNu);
 	
 	TCanvas *c1 = new TCanvas("c1","c1",900,900);
 	TString canvas_name;
@@ -374,9 +403,9 @@ void MCTruthAnalyzer()
 			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->SetMarkerColor(kViolet);
 			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->Draw("HIST SAME");
 
-			canvas_name = "./MCTruthStudy/PT_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".pdf";
+			canvas_name = "./MCTruthStudy/CRZL_PT_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".pdf";
 			c1->SaveAs(canvas_name);
-			canvas_name = "./MCTruthStudy/PT_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".png";
+			canvas_name = "./MCTruthStudy/CRZL_PT_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".png";
 			c1->SaveAs(canvas_name);
 			
 			sum_pT->Reset();
@@ -403,9 +432,9 @@ void MCTruthAnalyzer()
 			h_LepSIP[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->SetMarkerColor(kViolet);
 			h_LepSIP[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->DrawNormalized("HIST SAME");
 			
-			canvas_name = "./MCTruthStudy/SIP_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".pdf";
+			canvas_name = "./MCTruthStudy/CRZL_SIP_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".pdf";
 			c1->SaveAs(canvas_name);
-			canvas_name = "./MCTruthStudy/SIP_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".png";
+			canvas_name = "./MCTruthStudy/CRZL_SIP_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".png";
 			c1->SaveAs(canvas_name);
 		}
 	}
@@ -421,9 +450,9 @@ void MCTruthAnalyzer()
 			h_JetbTagger[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->SetMarkerColor(kRed);
 			h_JetbTagger[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->DrawNormalized("HIST SAME");
 
-			canvas_name = "./MCTruthStudy/bTaggScore_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".pdf";
+			canvas_name = "./MCTruthStudy/CRZL_bTaggScore_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".pdf";
 			c1->SaveAs(canvas_name);
-			canvas_name = "./MCTruthStudy/bTaggScore_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".png";
+			canvas_name = "./MCTruthStudy/CRZL_bTaggScore_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".png";
 			c1->SaveAs(canvas_name);
 		}
 	}
@@ -446,12 +475,14 @@ void MCTruthAnalyzer()
 		h_LepBDT[LeptonFlavours::Lepton][0][i_EBorEE]->SetMarkerColor(kViolet);
 		h_LepBDT[LeptonFlavours::Lepton][0][i_EBorEE]->DrawNormalized("HIST SAME");
 		
-		canvas_name = "./MCTruthStudy/BDT_distribution_ele_" + to_string(i_EBorEE) + ".pdf";
+		canvas_name = "./MCTruthStudy/CRZL_BDT_distribution_ele_" + to_string(i_EBorEE) + ".pdf";
 		c1->SaveAs(canvas_name);
-		canvas_name = "./MCTruthStudy/BDT_distribution_ele_" + to_string(i_EBorEE) + ".png";
+		canvas_name = "./MCTruthStudy/CRZL_BDT_distribution_ele_" + to_string(i_EBorEE) + ".png";
 		c1->SaveAs(canvas_name);
 	}
 
+	TFile* fOutHistos = new TFile("output.root", "recreate");
+	fOutHistos->cd();
 	
 	TGraphErrors *fr_ele_EB[LeptonFlavours::NUM_OF_FLAVOURS],*fr_ele_EE[LeptonFlavours::NUM_OF_FLAVOURS];
 	TGraphErrors *fr_mu_EB[LeptonFlavours::NUM_OF_FLAVOURS],*fr_mu_EE[LeptonFlavours::NUM_OF_FLAVOURS];
@@ -481,82 +512,142 @@ void MCTruthAnalyzer()
 		
 	}
 	
-//	auto c0 = new TCanvas("c0","multigraph L3",900,900);
-//	fr_ele_EB[LeptonFlavours::LightJet]->SetLineColor(kBlue);
-//	fr_ele_EB[LeptonFlavours::LightJet]->SetMarkerColor(kBlue);
-//	fr_ele_EB[LeptonFlavours::LightJet]->Draw("EP0");
-//	fr_ele_EB[LeptonFlavours::NoMatch]->SetLineColor(kBlack);
-//	fr_ele_EB[LeptonFlavours::NoMatch]->SetMarkerColor(kBlack);
-//	fr_ele_EB[LeptonFlavours::NoMatch]->Draw("EP0 SAME");
-//	fr_ele_EB[LeptonFlavours::HeavyJet]->SetLineColor(kRed);
-//	fr_ele_EB[LeptonFlavours::HeavyJet]->SetMarkerColor(kRed);
-//	fr_ele_EB[LeptonFlavours::HeavyJet]->Draw("EP0 SAME");
-//	fr_ele_EB[LeptonFlavours::Conversion]->SetLineColor(kGreen);
-//	fr_ele_EB[LeptonFlavours::Conversion]->SetMarkerColor(kGreen);
-//	fr_ele_EB[LeptonFlavours::Conversion]->Draw("EP0 SAME");
-//	fr_ele_EB[LeptonFlavours::Lepton]->SetLineColor(kViolet);
-//	fr_ele_EB[LeptonFlavours::Lepton]->SetMarkerColor(kViolet);
-//	fr_ele_EB[LeptonFlavours::Lepton]->Draw("EP0 SAME");
-//	fr_ele_EB[LeptonFlavours::LightJet]->SetMaximum(0.95);
-//	c0->SaveAs("./MCTruthStudy/FakeRates_ele_EB.pdf");
-//	c0->SaveAs("./MCTruthStudy/FakeRates_ele_EB.png");
-//
-//	fr_ele_EE[LeptonFlavours::LightJet]->SetLineColor(kBlue);
-//	fr_ele_EE[LeptonFlavours::LightJet]->SetMarkerColor(kBlue);
-//	fr_ele_EE[LeptonFlavours::LightJet]->Draw("EP0");
-//	fr_ele_EE[LeptonFlavours::NoMatch]->SetLineColor(kBlack);
-//	fr_ele_EE[LeptonFlavours::NoMatch]->SetMarkerColor(kBlack);
-//	fr_ele_EE[LeptonFlavours::NoMatch]->Draw("EP0 SAME");
-//	fr_ele_EE[LeptonFlavours::HeavyJet]->SetLineColor(kRed);
-//	fr_ele_EE[LeptonFlavours::HeavyJet]->SetMarkerColor(kRed);
-//	fr_ele_EE[LeptonFlavours::HeavyJet]->Draw("EP0 SAME");
-//	fr_ele_EE[LeptonFlavours::Conversion]->SetLineColor(kGreen);
-//	fr_ele_EE[LeptonFlavours::Conversion]->SetMarkerColor(kGreen);
-//	fr_ele_EE[LeptonFlavours::Conversion]->Draw("EP0 SAME");
-//	fr_ele_EE[LeptonFlavours::Lepton]->SetLineColor(kViolet);
-//	fr_ele_EE[LeptonFlavours::Lepton]->SetMarkerColor(kViolet);
-//	fr_ele_EE[LeptonFlavours::Lepton]->Draw("EP0 SAME");
-//	fr_ele_EE[LeptonFlavours::LightJet]->SetMaximum(0.95);
-//	c0->SaveAs("./MCTruthStudy/FakeRates_ele_EE.pdf");
-//	c0->SaveAs("./MCTruthStudy/FakeRates_ele_EE.png");
-//
-//	fr_mu_EB[LeptonFlavours::LightJet]->SetLineColor(kBlue);
-//	fr_mu_EB[LeptonFlavours::LightJet]->SetMarkerColor(kBlue);
-//	fr_mu_EB[LeptonFlavours::LightJet]->Draw("EP0");
-//	fr_mu_EB[LeptonFlavours::NoMatch]->SetLineColor(kBlack);
-//	fr_mu_EB[LeptonFlavours::NoMatch]->SetMarkerColor(kBlack);
-//	fr_mu_EB[LeptonFlavours::NoMatch]->Draw("EP0 SAME");
-//	fr_mu_EB[LeptonFlavours::HeavyJet]->SetLineColor(kRed);
-//	fr_mu_EB[LeptonFlavours::HeavyJet]->SetMarkerColor(kRed);
-//	fr_mu_EB[LeptonFlavours::HeavyJet]->Draw("EP0 SAME");
-//	fr_mu_EB[LeptonFlavours::Conversion]->SetLineColor(kGreen);
-//	fr_mu_EB[LeptonFlavours::Conversion]->SetMarkerColor(kGreen);
-//	fr_mu_EB[LeptonFlavours::Conversion]->Draw("EP0 SAME");
-//	fr_mu_EB[LeptonFlavours::Lepton]->SetLineColor(kViolet);
-//	fr_mu_EB[LeptonFlavours::Lepton]->SetMarkerColor(kViolet);
-//	fr_mu_EB[LeptonFlavours::Lepton]->Draw("EP0 SAME");
-//	fr_mu_EB[LeptonFlavours::LightJet]->SetMaximum(0.95);
-//	c0->SaveAs("./MCTruthStudy/FakeRates_mu_EB.pdf");
-//	c0->SaveAs("./MCTruthStudy/FakeRates_mu_EB.png");
-//
-//	fr_mu_EE[LeptonFlavours::LightJet]->SetLineColor(kBlue);
-//	fr_mu_EE[LeptonFlavours::LightJet]->SetMarkerColor(kBlue);
-//	fr_mu_EE[LeptonFlavours::LightJet]->Draw("EP0");
-//	fr_mu_EE[LeptonFlavours::NoMatch]->SetLineColor(kBlack);
-//	fr_mu_EE[LeptonFlavours::NoMatch]->SetMarkerColor(kBlack);
-//	fr_mu_EE[LeptonFlavours::NoMatch]->Draw("EP0 SAME");
-//	fr_mu_EE[LeptonFlavours::HeavyJet]->SetLineColor(kRed);
-//	fr_mu_EE[LeptonFlavours::HeavyJet]->SetMarkerColor(kRed);
-//	fr_mu_EE[LeptonFlavours::HeavyJet]->Draw("EP0 SAME");
-//	fr_mu_EE[LeptonFlavours::Conversion]->SetLineColor(kGreen);
-//	fr_mu_EE[LeptonFlavours::Conversion]->SetMarkerColor(kGreen);
-//	fr_mu_EE[LeptonFlavours::Conversion]->Draw("EP0 SAME");
-//	fr_mu_EE[LeptonFlavours::Lepton]->SetLineColor(kViolet);
-//	fr_mu_EE[LeptonFlavours::Lepton]->SetMarkerColor(kViolet);
-//	fr_mu_EE[LeptonFlavours::Lepton]->Draw("EP0 SAME");
-//	fr_mu_EE[LeptonFlavours::LightJet]->SetMaximum(0.95);
-//	c0->SaveAs("./MCTruthStudy/FakeRates_mu_EE.pdf");
-//	c0->SaveAs("./MCTruthStudy/FakeRates_mu_EE.png");
+	auto c0 = new TCanvas("c0","multigraph L3",900,900);
+	
+	TMultiGraph *mg_ele_EB = new TMultiGraph();
+	mg_ele_EB->Add(fr_ele_EB[LeptonFlavours::LightJet]);
+	fr_ele_EB[LeptonFlavours::LightJet]->SetLineColor(kBlue);
+	fr_ele_EB[LeptonFlavours::LightJet]->SetLineStyle(1);
+	fr_ele_EB[LeptonFlavours::LightJet]->SetMarkerSize(0);
+	fr_ele_EB[LeptonFlavours::LightJet]->SetTitle("Light jet");
+	mg_ele_EB->Add(fr_ele_EB[LeptonFlavours::NoMatch]);
+	fr_ele_EB[LeptonFlavours::NoMatch]->SetLineColor(kBlack);
+	fr_ele_EB[LeptonFlavours::NoMatch]->SetLineStyle(1);
+	fr_ele_EB[LeptonFlavours::NoMatch]->SetMarkerSize(0);
+	fr_ele_EB[LeptonFlavours::NoMatch]->SetTitle("NoMatch");
+	mg_ele_EB->Add(fr_ele_EB[LeptonFlavours::HeavyJet]);
+	fr_ele_EB[LeptonFlavours::HeavyJet]->SetLineColor(kRed);
+	fr_ele_EB[LeptonFlavours::HeavyJet]->SetLineStyle(1);
+	fr_ele_EB[LeptonFlavours::HeavyJet]->SetMarkerSize(0);
+	fr_ele_EB[LeptonFlavours::HeavyJet]->SetTitle("Heavy Jet");
+	mg_ele_EB->Add(fr_ele_EB[LeptonFlavours::Conversion]);
+	fr_ele_EB[LeptonFlavours::Conversion]->SetLineColor(kGreen);
+	fr_ele_EB[LeptonFlavours::Conversion]->SetLineStyle(1);
+	fr_ele_EB[LeptonFlavours::Conversion]->SetMarkerSize(0);
+	fr_ele_EB[LeptonFlavours::Conversion]->SetTitle("Conversion");
+	mg_ele_EB->Add(fr_ele_EB[LeptonFlavours::Lepton]);
+	fr_ele_EB[LeptonFlavours::Lepton]->SetLineColor(kViolet);
+	fr_ele_EB[LeptonFlavours::Lepton]->SetLineStyle(1);
+	fr_ele_EB[LeptonFlavours::Lepton]->SetMarkerSize(0);
+	fr_ele_EB[LeptonFlavours::Lepton]->SetTitle("Lepton");
+	gStyle->SetEndErrorSize(0);
+	mg_ele_EB->Draw("AP");
+	mg_ele_EB->SetMaximum(1.);
+	c0->SaveAs("./MCTruthStudy/FR_JetFlavour_SS_ele_EB.pdf");
+	c0->SaveAs("./MCTruthStudy/FR_JetFlavour_SS_ele_EB.png");
+	c0->Clear();
+	
+	TMultiGraph *mg_ele_EE = new TMultiGraph();
+	mg_ele_EE->Add(fr_ele_EE[LeptonFlavours::LightJet]);
+	fr_ele_EE[LeptonFlavours::LightJet]->SetLineColor(kBlue);
+	fr_ele_EE[LeptonFlavours::LightJet]->SetLineStyle(1);
+	fr_ele_EE[LeptonFlavours::LightJet]->SetMarkerSize(0);
+	fr_ele_EE[LeptonFlavours::LightJet]->SetTitle("Light jet");
+	mg_ele_EE->Add(fr_ele_EE[LeptonFlavours::NoMatch]);
+	fr_ele_EE[LeptonFlavours::NoMatch]->SetLineColor(kBlack);
+	fr_ele_EE[LeptonFlavours::NoMatch]->SetLineStyle(1);
+	fr_ele_EE[LeptonFlavours::NoMatch]->SetMarkerSize(0);
+	fr_ele_EE[LeptonFlavours::NoMatch]->SetTitle("NoMatch");
+	mg_ele_EE->Add(fr_ele_EE[LeptonFlavours::HeavyJet]);
+	fr_ele_EE[LeptonFlavours::HeavyJet]->SetLineColor(kRed);
+	fr_ele_EE[LeptonFlavours::HeavyJet]->SetLineStyle(1);
+	fr_ele_EE[LeptonFlavours::HeavyJet]->SetMarkerSize(0);
+	fr_ele_EE[LeptonFlavours::HeavyJet]->SetTitle("Heavy Jet");
+	mg_ele_EE->Add(fr_ele_EE[LeptonFlavours::Conversion]);
+	fr_ele_EE[LeptonFlavours::Conversion]->SetLineColor(kGreen);
+	fr_ele_EE[LeptonFlavours::Conversion]->SetLineStyle(1);
+	fr_ele_EE[LeptonFlavours::Conversion]->SetMarkerSize(0);
+	fr_ele_EE[LeptonFlavours::Conversion]->SetTitle("Conversion");
+	mg_ele_EE->Add(fr_ele_EE[LeptonFlavours::Lepton]);
+	fr_ele_EE[LeptonFlavours::Lepton]->SetLineColor(kViolet);
+	fr_ele_EE[LeptonFlavours::Lepton]->SetLineStyle(1);
+	fr_ele_EE[LeptonFlavours::Lepton]->SetMarkerSize(0);
+	fr_ele_EE[LeptonFlavours::Lepton]->SetTitle("Lepton");
+	gStyle->SetEndErrorSize(0);
+	mg_ele_EE->Draw("AP");
+	mg_ele_EE->SetMaximum(1.);
+	c0->SaveAs("./MCTruthStudy/FR_JetFlavour_SS_ele_EE.pdf");
+	c0->SaveAs("./MCTruthStudy/FR_JetFlavour_SS_ele_EE.png");
+	c0->Clear();
+	
+	TMultiGraph *mg_mu_EB = new TMultiGraph();
+	mg_mu_EB->Add(fr_mu_EB[LeptonFlavours::LightJet]);
+	fr_mu_EB[LeptonFlavours::LightJet]->SetLineColor(kBlue);
+	fr_mu_EB[LeptonFlavours::LightJet]->SetLineStyle(1);
+	fr_mu_EB[LeptonFlavours::LightJet]->SetMarkerSize(0);
+	fr_mu_EB[LeptonFlavours::LightJet]->SetTitle("Light jet");
+	mg_mu_EB->Add(fr_mu_EB[LeptonFlavours::NoMatch]);
+	fr_mu_EB[LeptonFlavours::NoMatch]->SetLineColor(kBlack);
+	fr_mu_EB[LeptonFlavours::NoMatch]->SetLineStyle(1);
+	fr_mu_EB[LeptonFlavours::NoMatch]->SetMarkerSize(0);
+	fr_mu_EB[LeptonFlavours::NoMatch]->SetTitle("NoMatch");
+	mg_mu_EB->Add(fr_mu_EB[LeptonFlavours::HeavyJet]);
+	fr_mu_EB[LeptonFlavours::HeavyJet]->SetLineColor(kRed);
+	fr_mu_EB[LeptonFlavours::HeavyJet]->SetLineStyle(1);
+	fr_mu_EB[LeptonFlavours::HeavyJet]->SetMarkerSize(0);
+	fr_mu_EB[LeptonFlavours::HeavyJet]->SetTitle("Heavy Jet");
+	mg_mu_EB->Add(fr_mu_EB[LeptonFlavours::Conversion]);
+	fr_mu_EB[LeptonFlavours::Conversion]->SetLineColor(kGreen);
+	fr_mu_EB[LeptonFlavours::Conversion]->SetLineStyle(1);
+	fr_mu_EB[LeptonFlavours::Conversion]->SetMarkerSize(0);
+	fr_mu_EB[LeptonFlavours::Conversion]->SetTitle("Conversion");
+	mg_mu_EB->Add(fr_mu_EB[LeptonFlavours::Lepton]);
+	fr_mu_EB[LeptonFlavours::Lepton]->SetLineColor(kViolet);
+	fr_mu_EB[LeptonFlavours::Lepton]->SetLineStyle(1);
+	fr_mu_EB[LeptonFlavours::Lepton]->SetMarkerSize(0);
+	fr_mu_EB[LeptonFlavours::Lepton]->SetTitle("Lepton");
+	gStyle->SetEndErrorSize(0);
+	mg_mu_EB->Draw("AP");
+	mg_mu_EB->SetMaximum(1.);
+	c0->SaveAs("./MCTruthStudy/FR_JetFlavour_SS_mu_EB.pdf");
+	c0->SaveAs("./MCTruthStudy/FR_JetFlavour_SS_mu_EB.png");
+	c0->Clear();
+	
+	TMultiGraph *mg_mu_EE = new TMultiGraph();
+	mg_mu_EE->Add(fr_mu_EE[LeptonFlavours::LightJet]);
+	fr_mu_EE[LeptonFlavours::LightJet]->SetLineColor(kBlue);
+	fr_mu_EE[LeptonFlavours::LightJet]->SetLineStyle(1);
+	fr_mu_EE[LeptonFlavours::LightJet]->SetMarkerSize(0);
+	fr_mu_EE[LeptonFlavours::LightJet]->SetTitle("Light jet");
+	mg_mu_EE->Add(fr_mu_EE[LeptonFlavours::NoMatch]);
+	fr_mu_EE[LeptonFlavours::NoMatch]->SetLineColor(kBlack);
+	fr_mu_EE[LeptonFlavours::NoMatch]->SetLineStyle(1);
+	fr_mu_EE[LeptonFlavours::NoMatch]->SetMarkerSize(0);
+	fr_mu_EE[LeptonFlavours::NoMatch]->SetTitle("NoMatch");
+	mg_mu_EE->Add(fr_mu_EE[LeptonFlavours::HeavyJet]);
+	fr_mu_EE[LeptonFlavours::HeavyJet]->SetLineColor(kRed);
+	fr_mu_EE[LeptonFlavours::HeavyJet]->SetLineStyle(1);
+	fr_mu_EE[LeptonFlavours::HeavyJet]->SetMarkerSize(0);
+	fr_mu_EE[LeptonFlavours::HeavyJet]->SetTitle("Heavy Jet");
+	mg_mu_EE->Add(fr_mu_EE[LeptonFlavours::Conversion]);
+	fr_mu_EE[LeptonFlavours::Conversion]->SetLineColor(kGreen);
+	fr_mu_EE[LeptonFlavours::Conversion]->SetLineStyle(1);
+	fr_mu_EE[LeptonFlavours::Conversion]->SetMarkerSize(0);
+	fr_mu_EE[LeptonFlavours::Conversion]->SetTitle("Conversion");
+	mg_mu_EE->Add(fr_mu_EE[LeptonFlavours::Lepton]);
+	fr_mu_EE[LeptonFlavours::Lepton]->SetLineColor(kViolet);
+	fr_mu_EE[LeptonFlavours::Lepton]->SetLineStyle(1);
+	fr_mu_EE[LeptonFlavours::Lepton]->SetMarkerSize(0);
+	fr_mu_EE[LeptonFlavours::Lepton]->SetTitle("Lepton");
+	gStyle->SetEndErrorSize(0);
+	mg_mu_EE->Draw("AP");
+	mg_mu_EE->SetMaximum(1.);
+	c0->SaveAs("./MCTruthStudy/FR_JetFlavour_SS_mu_EE.pdf");
+	c0->SaveAs("./MCTruthStudy/FR_JetFlavour_SS_mu_EE.png");
+	c0->Clear();
+	
+	
+	
 
 	fOutHistos->Close();
 	delete fOutHistos;

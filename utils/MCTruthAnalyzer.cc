@@ -34,6 +34,8 @@ enum LeptonFlavours
 float pT_bins[] = {5, 7, 10, 20, 30, 40, 50, 80};
 int _n_pT_bins = 7;
 
+vector <TString> _s_CR, _s_LepFlav, _s_EEorEB, _s_MatchFlavour;
+
 TH1D* h_LepPT[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
 TH1D* h_JetbTagger[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
 TH1D* h_LepSIP[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
@@ -44,6 +46,8 @@ TH2F* passingSEL[LeptonFlavours::NUM_OF_FLAVOURS][2];
 TH2F* faillingSEL[LeptonFlavours::NUM_OF_FLAVOURS][2];
 int n_events[LeptonFlavours::NUM_OF_FLAVOURS][2];
 int n_events_afterCuts[LeptonFlavours::NUM_OF_FLAVOURS][2];
+
+
 
 int matchFlavour(int MatchJetPartonFlavour, int GenMCTruthMatchId, int GenMCTruthMatchMotherId)
 {
@@ -304,6 +308,21 @@ void MCTruthAnalyzer()
 {
 	gROOT->SetBatch();
 	
+	_s_CR.push_back("SS");
+	_s_CR.push_back("OS");
+	
+	_s_LepFlav.push_back("ele");
+	_s_LepFlav.push_back("mu");
+	
+	_s_EEorEB.push_back("EB");
+	_s_EEorEB.push_back("EE");
+	
+	_s_MatchFlavour.push_back("NoMatch");
+	_s_MatchFlavour.push_back("Conversion");
+	_s_MatchFlavour.push_back("Lepton");
+	_s_MatchFlavour.push_back("LightJet");
+	_s_MatchFlavour.push_back("HeavyJet");
+	
 	TString path = "NewData/";
 	TString file_name = "/ZZ4lAnalysis.root";
 	
@@ -313,51 +332,51 @@ void MCTruthAnalyzer()
 	
 	for (int i_jf = 0; i_jf < LeptonFlavours::NUM_OF_FLAVOURS; i_jf++)
 	{
-		histo_name ="h_LepPT_ele_EE_"+to_string(i_jf);
+		histo_name ="h_LepPT_ele_EE_"+_s_MatchFlavour.at(i_jf);
 		h_LepPT[i_jf][0][0] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
-		histo_name ="h_LepPT_ele_EB_"+to_string(i_jf);
+		histo_name ="h_LepPT_ele_EB_"+_s_MatchFlavour.at(i_jf);
 		h_LepPT[i_jf][0][1] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
-		histo_name ="h_LepPT_mu_EE_"+to_string(i_jf);
+		histo_name ="h_LepPT_mu_EE_"+_s_MatchFlavour.at(i_jf);
 		h_LepPT[i_jf][1][0] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
-		histo_name ="h_LepPT_mu_EB_"+to_string(i_jf);
+		histo_name ="h_LepPT_mu_EB_"+_s_MatchFlavour.at(i_jf);
 		h_LepPT[i_jf][1][1] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
 		
-		histo_name ="h_LepbTag_ele_EE_"+to_string(i_jf);
+		histo_name ="h_LepbTag_ele_EE_"+_s_MatchFlavour.at(i_jf);
 		h_JetbTagger[i_jf][0][0] = new TH1D(histo_name,histo_name,20, -1., 1.);
-		histo_name ="h_LepbTag_ele_EB_"+to_string(i_jf);
+		histo_name ="h_LepbTag_ele_EB_"+_s_MatchFlavour.at(i_jf);
 		h_JetbTagger[i_jf][0][1] = new TH1D(histo_name,histo_name,20, -1., 1.);
-		histo_name ="h_LepbTag_mu_EE_"+to_string(i_jf);
+		histo_name ="h_LepbTag_mu_EE_"+_s_MatchFlavour.at(i_jf);
 		h_JetbTagger[i_jf][1][0] = new TH1D(histo_name,histo_name,20, -1., 1.);
-		histo_name ="h_LepbTag_mu_EB_"+to_string(i_jf);
+		histo_name ="h_LepbTag_mu_EB_"+_s_MatchFlavour.at(i_jf);
 		h_JetbTagger[i_jf][1][1] = new TH1D(histo_name,histo_name,20, -1., 1.);
 		
-		histo_name ="h_LepSIP_ele_EE_"+to_string(i_jf);
+		histo_name ="h_LepSIP_ele_EE_"+_s_MatchFlavour.at(i_jf);
 		h_LepSIP[i_jf][0][0] = new TH1D(histo_name,histo_name,40., 0.,4.);
-		histo_name ="h_LepSIP_ele_EB_"+to_string(i_jf);
+		histo_name ="h_LepSIP_ele_EB_"+_s_MatchFlavour.at(i_jf);
 		h_LepSIP[i_jf][0][1] = new TH1D(histo_name,histo_name,40., 0.,4.);
-		histo_name ="h_LepSIP_mu_EE_"+to_string(i_jf);
+		histo_name ="h_LepSIP_mu_EE_"+_s_MatchFlavour.at(i_jf);
 		h_LepSIP[i_jf][1][0] = new TH1D(histo_name,histo_name,40., 0.,4.);
-		histo_name ="h_LepSIP_mu_EB_"+to_string(i_jf);
+		histo_name ="h_LepSIP_mu_EB_"+_s_MatchFlavour.at(i_jf);
 		h_LepSIP[i_jf][1][1] = new TH1D(histo_name,histo_name,40., 0.,4.);
 		
-		histo_name ="h_LepBDT_ele_EE_"+to_string(i_jf);
+		histo_name ="h_LepBDT_ele_EE_"+_s_MatchFlavour.at(i_jf);
 		h_LepBDT[i_jf][0][0] = new TH1D(histo_name,histo_name,20, -1., 1.);
-		histo_name ="h_LepBDT_ele_EB_"+to_string(i_jf);
+		histo_name ="h_LepBDT_ele_EB_"+_s_MatchFlavour.at(i_jf);
 		h_LepBDT[i_jf][0][1] = new TH1D(histo_name,histo_name,20, -1., 1.);
-		histo_name ="h_LepBDT_mu_EE_"+to_string(i_jf);
+		histo_name ="h_LepBDT_mu_EE_"+_s_MatchFlavour.at(i_jf);
 		h_LepBDT[i_jf][1][0] = new TH1D(histo_name,histo_name,20, -1., 1.);
-		histo_name ="h_LepBDT_mu_EB_"+to_string(i_jf);
+		histo_name ="h_LepBDT_mu_EB_"+_s_MatchFlavour.at(i_jf);
 		h_LepBDT[i_jf][1][1] = new TH1D(histo_name,histo_name,20, -1., 1.);
 		
 		
-		histo_name = "Passing_ele_" + to_string(i_jf);
+		histo_name = "Passing_ele_" + _s_MatchFlavour.at(i_jf);
 		passingSEL[i_jf][0] = new TH2F(histo_name,"", 80, 0, 80, 2, 0, 2);
-		histo_name = "Failing_ele_" + to_string(i_jf);
+		histo_name = "Failing_ele_" + _s_MatchFlavour.at(i_jf);
 		faillingSEL[i_jf][0] = new TH2F(histo_name,"", 80, 0, 80, 2, 0, 2);
 		
-		histo_name = "Passing_mu_" + to_string(i_jf);
+		histo_name = "Passing_mu_" + _s_MatchFlavour.at(i_jf);
 		passingSEL[i_jf][1] = new TH2F(histo_name,"", 80, 0, 80, 2, 0, 2);
-		histo_name = "Failing_mu_" + to_string(i_jf);
+		histo_name = "Failing_mu_" + _s_MatchFlavour.at(i_jf);
 		faillingSEL[i_jf][1] = new TH2F(histo_name,"", 80, 0, 80, 2, 0, 2);
 	}
 	
@@ -403,9 +422,9 @@ void MCTruthAnalyzer()
 			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->SetMarkerColor(kViolet);
 			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->Draw("HIST SAME");
 
-			canvas_name = "./MCTruthStudy/CRZL_PT_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".pdf";
+			canvas_name = "./MCTruthStudy/CRZL_PT_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
 			c1->SaveAs(canvas_name);
-			canvas_name = "./MCTruthStudy/CRZL_PT_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".png";
+			canvas_name = "./MCTruthStudy/CRZL_PT_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".png";
 			c1->SaveAs(canvas_name);
 			
 			sum_pT->Reset();
@@ -432,9 +451,9 @@ void MCTruthAnalyzer()
 			h_LepSIP[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->SetMarkerColor(kViolet);
 			h_LepSIP[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->DrawNormalized("HIST SAME");
 			
-			canvas_name = "./MCTruthStudy/CRZL_SIP_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".pdf";
+			canvas_name = "./MCTruthStudy/CRZL_SIP_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
 			c1->SaveAs(canvas_name);
-			canvas_name = "./MCTruthStudy/CRZL_SIP_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".png";
+			canvas_name = "./MCTruthStudy/CRZL_SIP_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".png";
 			c1->SaveAs(canvas_name);
 		}
 	}
@@ -450,9 +469,9 @@ void MCTruthAnalyzer()
 			h_JetbTagger[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->SetMarkerColor(kRed);
 			h_JetbTagger[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->DrawNormalized("HIST SAME");
 
-			canvas_name = "./MCTruthStudy/CRZL_bTaggScore_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".pdf";
+			canvas_name = "./MCTruthStudy/CRZL_bTaggScore_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
 			c1->SaveAs(canvas_name);
-			canvas_name = "./MCTruthStudy/CRZL_bTaggScore_distribution_" + to_string(i_lep_flav) + "_" + to_string(i_EBorEE) + ".png";
+			canvas_name = "./MCTruthStudy/CRZL_bTaggScore_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".png";
 			c1->SaveAs(canvas_name);
 		}
 	}
@@ -475,9 +494,9 @@ void MCTruthAnalyzer()
 		h_LepBDT[LeptonFlavours::Lepton][0][i_EBorEE]->SetMarkerColor(kViolet);
 		h_LepBDT[LeptonFlavours::Lepton][0][i_EBorEE]->DrawNormalized("HIST SAME");
 		
-		canvas_name = "./MCTruthStudy/CRZL_BDT_distribution_ele_" + to_string(i_EBorEE) + ".pdf";
+		canvas_name = "./MCTruthStudy/CRZL_BDT_distribution_ele_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
 		c1->SaveAs(canvas_name);
-		canvas_name = "./MCTruthStudy/CRZL_BDT_distribution_ele_" + to_string(i_EBorEE) + ".png";
+		canvas_name = "./MCTruthStudy/CRZL_BDT_distribution_ele_" + _s_EEorEB.at(i_EBorEE) + ".png";
 		c1->SaveAs(canvas_name);
 	}
 
@@ -490,22 +509,22 @@ void MCTruthAnalyzer()
 	
 	for (int i_jf = 0; i_jf < LeptonFlavours::NUM_OF_FLAVOURS; i_jf++)
 	{
-		fr_name = "FR_ele_EB_"+to_string(i_jf);
+		fr_name = "FR_ele_EB_"+_s_MatchFlavour.at(i_jf);
 		fr_ele_EB[i_jf] = makeFRgraph(0, "EB" , passingSEL[i_jf][0], faillingSEL[i_jf][0]);
 		fr_ele_EB[i_jf]->SetName(fr_name);
 		fr_ele_EB[i_jf]->Write();
 		
-		fr_name = "FR_ele_EE_"+to_string(i_jf);
+		fr_name = "FR_ele_EE_"+_s_MatchFlavour.at(i_jf);
 		fr_ele_EE[i_jf] = makeFRgraph(0, "EE", passingSEL[i_jf][0], faillingSEL[i_jf][0]);
 		fr_ele_EE[i_jf]->SetName(fr_name);
 		fr_ele_EE[i_jf]->Write();
 		
-		fr_name = "FR_mu_EB_"+to_string(i_jf);
+		fr_name = "FR_mu_EB_"+_s_MatchFlavour.at(i_jf);
 		fr_mu_EB[i_jf] = makeFRgraph(1, "EB" , passingSEL[i_jf][1], faillingSEL[i_jf][1]);
 		fr_mu_EB[i_jf]->SetName(fr_name);
 		fr_mu_EB[i_jf]->Write();
 		
-		fr_name = "FR_mu_EE_"+to_string(i_jf);
+		fr_name = "FR_mu_EE_"+_s_MatchFlavour.at(i_jf);
 		fr_mu_EE[i_jf] = makeFRgraph(1, "EE", passingSEL[i_jf][1], faillingSEL[i_jf][1]);
 		fr_mu_EE[i_jf]->SetName(fr_name);
 		fr_mu_EE[i_jf]->Write();

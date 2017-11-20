@@ -36,17 +36,11 @@ int _n_pT_bins = 7;
 
 vector <TString> _s_CR, _s_LepFlav, _s_EEorEB, _s_MatchFlavour;
 
-TH1D* h_LepPT[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
-TH1D* h_JetbTagger[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
-TH1D* h_LepSIP[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
-TH1D* h_LepBDT[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
-TH1D* h_LepMissingHit[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
 TString histo_name;
 TH2F* passingSEL[LeptonFlavours::NUM_OF_FLAVOURS][2];
 TH2F* faillingSEL[LeptonFlavours::NUM_OF_FLAVOURS][2];
 int n_events[LeptonFlavours::NUM_OF_FLAVOURS][2];
 int n_events_afterCuts[LeptonFlavours::NUM_OF_FLAVOURS][2];
-
 
 
 int matchFlavour(int MatchJetPartonFlavour, int GenMCTruthMatchId, int GenMCTruthMatchMotherId)
@@ -260,13 +254,6 @@ void LoopCRZL(TString input_file_name)
 			if (fabs(LepLepId->at(2)) == 11) faillingSEL[jet_category][0]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.479) ? 0.5 : 1.5, overallEventWeight);
 			if (fabs(LepLepId->at(2)) == 13) faillingSEL[jet_category][1]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.2) ? 0.5 : 1.5, overallEventWeight);
 		}
-		
-		// Fill distributions
-		h_LepPT[jet_category][lep_flavour][lep_EBorEE]->Fill(LepPt->at(2), overallEventWeight);
-		h_JetbTagger[jet_category][lep_flavour][lep_EBorEE]->Fill(MatchJetbTagger->at(2), overallEventWeight);
-		h_LepBDT[jet_category][lep_flavour][lep_EBorEE]->Fill(LepBDT->at(2), overallEventWeight);
-		h_LepSIP[jet_category][lep_flavour][lep_EBorEE]->Fill(LepSIP->at(2), overallEventWeight);
-		
 		n_events_afterCuts[jet_category][lep_flavour]++;
 	}
 	
@@ -329,46 +316,9 @@ void MCTruthAnalyzer()
 	TString DY       = path + "DYJetsToLL_M50"     + file_name;
 	TString TTJets   = path + "TTJets_DiLept_ext1" + file_name;
 	TString WZTo3LNu = path + "WZTo3LNu"           + file_name;
-	
+
 	for (int i_jf = 0; i_jf < LeptonFlavours::NUM_OF_FLAVOURS; i_jf++)
 	{
-		histo_name ="h_LepPT_ele_EE_"+_s_MatchFlavour.at(i_jf);
-		h_LepPT[i_jf][0][0] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
-		histo_name ="h_LepPT_ele_EB_"+_s_MatchFlavour.at(i_jf);
-		h_LepPT[i_jf][0][1] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
-		histo_name ="h_LepPT_mu_EE_"+_s_MatchFlavour.at(i_jf);
-		h_LepPT[i_jf][1][0] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
-		histo_name ="h_LepPT_mu_EB_"+_s_MatchFlavour.at(i_jf);
-		h_LepPT[i_jf][1][1] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
-		
-		histo_name ="h_LepbTag_ele_EE_"+_s_MatchFlavour.at(i_jf);
-		h_JetbTagger[i_jf][0][0] = new TH1D(histo_name,histo_name,20, -1., 1.);
-		histo_name ="h_LepbTag_ele_EB_"+_s_MatchFlavour.at(i_jf);
-		h_JetbTagger[i_jf][0][1] = new TH1D(histo_name,histo_name,20, -1., 1.);
-		histo_name ="h_LepbTag_mu_EE_"+_s_MatchFlavour.at(i_jf);
-		h_JetbTagger[i_jf][1][0] = new TH1D(histo_name,histo_name,20, -1., 1.);
-		histo_name ="h_LepbTag_mu_EB_"+_s_MatchFlavour.at(i_jf);
-		h_JetbTagger[i_jf][1][1] = new TH1D(histo_name,histo_name,20, -1., 1.);
-		
-		histo_name ="h_LepSIP_ele_EE_"+_s_MatchFlavour.at(i_jf);
-		h_LepSIP[i_jf][0][0] = new TH1D(histo_name,histo_name,40., 0.,4.);
-		histo_name ="h_LepSIP_ele_EB_"+_s_MatchFlavour.at(i_jf);
-		h_LepSIP[i_jf][0][1] = new TH1D(histo_name,histo_name,40., 0.,4.);
-		histo_name ="h_LepSIP_mu_EE_"+_s_MatchFlavour.at(i_jf);
-		h_LepSIP[i_jf][1][0] = new TH1D(histo_name,histo_name,40., 0.,4.);
-		histo_name ="h_LepSIP_mu_EB_"+_s_MatchFlavour.at(i_jf);
-		h_LepSIP[i_jf][1][1] = new TH1D(histo_name,histo_name,40., 0.,4.);
-		
-		histo_name ="h_LepBDT_ele_EE_"+_s_MatchFlavour.at(i_jf);
-		h_LepBDT[i_jf][0][0] = new TH1D(histo_name,histo_name,20, -1., 1.);
-		histo_name ="h_LepBDT_ele_EB_"+_s_MatchFlavour.at(i_jf);
-		h_LepBDT[i_jf][0][1] = new TH1D(histo_name,histo_name,20, -1., 1.);
-		histo_name ="h_LepBDT_mu_EE_"+_s_MatchFlavour.at(i_jf);
-		h_LepBDT[i_jf][1][0] = new TH1D(histo_name,histo_name,20, -1., 1.);
-		histo_name ="h_LepBDT_mu_EB_"+_s_MatchFlavour.at(i_jf);
-		h_LepBDT[i_jf][1][1] = new TH1D(histo_name,histo_name,20, -1., 1.);
-		
-		
 		histo_name = "Passing_ele_" + _s_MatchFlavour.at(i_jf);
 		passingSEL[i_jf][0] = new TH2F(histo_name,"", 80, 0, 80, 2, 0, 2);
 		histo_name = "Failing_ele_" + _s_MatchFlavour.at(i_jf);
@@ -384,127 +334,12 @@ void MCTruthAnalyzer()
 	LoopCRZL(TTJets);
 	LoopCRZL(WZTo3LNu);
 	
-	TCanvas *c1 = new TCanvas("c1","c1",900,900);
-	TString canvas_name;
-	c1->cd();
-	TH1D* sum_pT;
-	
-	for(int i_lep_flav = 0; i_lep_flav < 2; i_lep_flav++)
-	{
-		for(int i_EBorEE = 0; i_EBorEE < 2; i_EBorEE++)
-		{
-			sum_pT = (TH1D*)h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->Clone();
-			sum_pT->Add(h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE]);
-			sum_pT->Add(h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE]);
-			sum_pT->Add(h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]);
-			sum_pT->Add(h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]);
-			
-			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->Divide(sum_pT);
-			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->SetLineColor(kBlue);
-			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->SetMarkerColor(kBlue);
-			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->SetMaximum(1.0);
-			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->SetMinimum(-0.01);
-			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->Draw("HIST ");
-			h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE]->Divide(sum_pT);
-			h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE]->SetLineColor(kBlack);
-			h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE]->SetMarkerColor(kBlack);
-			h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE]->Draw("HIST SAME");
-			h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->Divide(sum_pT);
-			h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->SetLineColor(kRed);
-			h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->SetMarkerColor(kRed);
-			h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->Draw("HIST SAME");
-			h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE]->Divide(sum_pT);
-			h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE]->SetLineColor(kGreen);
-			h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE]->SetMarkerColor(kGreen);
-			h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE]->Draw("HIST SAME");
-			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->Divide(sum_pT);
-			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->SetLineColor(kViolet);
-			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->SetMarkerColor(kViolet);
-			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->Draw("HIST SAME");
-
-			canvas_name = "./MCTruthStudy/CRZL_PT_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
-			c1->SaveAs(canvas_name);
-			canvas_name = "./MCTruthStudy/CRZL_PT_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".png";
-			c1->SaveAs(canvas_name);
-			
-			sum_pT->Reset();
-		}
-	}
-	
-	for(int i_lep_flav = 0; i_lep_flav < 2; i_lep_flav++)
-	{
-		for(int i_EBorEE = 0; i_EBorEE < 2; i_EBorEE++)
-		{
-			h_LepSIP[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->SetLineColor(kBlue);
-			h_LepSIP[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->SetMarkerColor(kBlue);
-			h_LepSIP[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->DrawNormalized("HIST");
-			h_LepSIP[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE]->SetLineColor(kBlack);
-			h_LepSIP[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE]->SetMarkerColor(kBlack);
-			h_LepSIP[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE]->DrawNormalized("HIST SAME");
-			h_LepSIP[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->SetLineColor(kRed);
-			h_LepSIP[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->SetMarkerColor(kRed);
-			h_LepSIP[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->DrawNormalized("HIST SAME");
-			h_LepSIP[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE]->SetLineColor(kGreen);
-			h_LepSIP[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE]->SetMarkerColor(kGreen);
-			h_LepSIP[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE]->DrawNormalized("HIST SAME");
-			h_LepSIP[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->SetLineColor(kViolet);
-			h_LepSIP[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->SetMarkerColor(kViolet);
-			h_LepSIP[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->DrawNormalized("HIST SAME");
-			
-			canvas_name = "./MCTruthStudy/CRZL_SIP_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
-			c1->SaveAs(canvas_name);
-			canvas_name = "./MCTruthStudy/CRZL_SIP_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".png";
-			c1->SaveAs(canvas_name);
-		}
-	}
-	
-	for(int i_lep_flav = 0; i_lep_flav < 2; i_lep_flav++)
-	{
-		for(int i_EBorEE = 0; i_EBorEE < 2; i_EBorEE++)
-		{
-			h_JetbTagger[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->SetLineColor(kBlue);
-			h_JetbTagger[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->SetMarkerColor(kBlue);
-			h_JetbTagger[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->DrawNormalized("HIST");
-			h_JetbTagger[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->SetLineColor(kRed);
-			h_JetbTagger[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->SetMarkerColor(kRed);
-			h_JetbTagger[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->DrawNormalized("HIST SAME");
-
-			canvas_name = "./MCTruthStudy/CRZL_bTaggScore_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
-			c1->SaveAs(canvas_name);
-			canvas_name = "./MCTruthStudy/CRZL_bTaggScore_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".png";
-			c1->SaveAs(canvas_name);
-		}
-	}
-	
-	for(int i_EBorEE = 0; i_EBorEE < 2; i_EBorEE++)
-	{
-		h_LepBDT[LeptonFlavours::LightJet][0][i_EBorEE]->SetLineColor(kBlue);
-		h_LepBDT[LeptonFlavours::LightJet][0][i_EBorEE]->SetMarkerColor(kBlue);
-		h_LepBDT[LeptonFlavours::LightJet][0][i_EBorEE]->DrawNormalized("HIST");
-		h_LepBDT[LeptonFlavours::NoMatch][0][i_EBorEE]->SetLineColor(kBlack);
-		h_LepBDT[LeptonFlavours::NoMatch][0][i_EBorEE]->SetMarkerColor(kBlack);
-		h_LepBDT[LeptonFlavours::NoMatch][0][i_EBorEE]->DrawNormalized("HIST SAME");
-		h_LepBDT[LeptonFlavours::HeavyJet][0][i_EBorEE]->SetLineColor(kRed);
-		h_LepBDT[LeptonFlavours::HeavyJet][0][i_EBorEE]->SetMarkerColor(kRed);
-		h_LepBDT[LeptonFlavours::HeavyJet][0][i_EBorEE]->DrawNormalized("HIST SAME");
-		h_LepBDT[LeptonFlavours::Conversion][0][i_EBorEE]->SetLineColor(kGreen);
-		h_LepBDT[LeptonFlavours::Conversion][0][i_EBorEE]->SetMarkerColor(kGreen);
-		h_LepBDT[LeptonFlavours::Conversion][0][i_EBorEE]->DrawNormalized("HIST SAME");
-		h_LepBDT[LeptonFlavours::Lepton][0][i_EBorEE]->SetLineColor(kViolet);
-		h_LepBDT[LeptonFlavours::Lepton][0][i_EBorEE]->SetMarkerColor(kViolet);
-		h_LepBDT[LeptonFlavours::Lepton][0][i_EBorEE]->DrawNormalized("HIST SAME");
-		
-		canvas_name = "./MCTruthStudy/CRZL_BDT_distribution_ele_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
-		c1->SaveAs(canvas_name);
-		canvas_name = "./MCTruthStudy/CRZL_BDT_distribution_ele_" + _s_EEorEB.at(i_EBorEE) + ".png";
-		c1->SaveAs(canvas_name);
-	}
-
 	TFile* fOutHistos = new TFile("output.root", "recreate");
 	fOutHistos->cd();
 	
 	TGraphErrors *fr_ele_EB[LeptonFlavours::NUM_OF_FLAVOURS],*fr_ele_EE[LeptonFlavours::NUM_OF_FLAVOURS];
 	TGraphErrors *fr_mu_EB[LeptonFlavours::NUM_OF_FLAVOURS],*fr_mu_EE[LeptonFlavours::NUM_OF_FLAVOURS];
+	
 	TString fr_name;
 	
 	for (int i_jf = 0; i_jf < LeptonFlavours::NUM_OF_FLAVOURS; i_jf++)
@@ -528,7 +363,6 @@ void MCTruthAnalyzer()
 		fr_mu_EE[i_jf] = makeFRgraph(1, "EE", passingSEL[i_jf][1], faillingSEL[i_jf][1]);
 		fr_mu_EE[i_jf]->SetName(fr_name);
 		fr_mu_EE[i_jf]->Write();
-		
 	}
 	
 	auto c0 = new TCanvas("c0","multigraph L3",900,900);

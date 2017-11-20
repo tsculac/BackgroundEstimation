@@ -1205,7 +1205,7 @@ void SSmethod::Correct_Final_FR( TString input_file_data_name)
 		nb = fChain->GetEntry(jentry);
 		nbytes += nb;
 		
-		if ((test_bit(CRflag, CRZLLss))) continue;
+		if (!(test_bit(CRflag, CRZLLss))) continue;
 		
 		if ( abs(Z2Flav) != 121) continue; // only electrons
 //		if ( (LepPt->at(0) > LepPt->at(1)) && (LepPt->at(0) < 20. || LepPt->at(1) < 10.) ) continue;

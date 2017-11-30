@@ -1156,7 +1156,7 @@ void SSmethod::Fit_FRnMH_graphs(TGraphErrors *FR_MissingHits_graph[99][99])
 			c1->cd();
 			FR_MissingHits_graph[i_eta][i_pt]->Draw("AP");
 			system("mkdir -p Fits");
-			SavePlots(c1, "Fits/"+graph_name+".pdf");
+			SavePlots(c1, "Fits/" + graph_name);
 		}
 	}
 }
@@ -1321,14 +1321,16 @@ void SSmethod::PlotFR()
    FR_SS_muon_EE_unc->SetLineStyle(1);
    FR_SS_muon_EE_unc->SetMarkerSize(0);
    FR_SS_muon_EE_unc->SetTitle("endcap uncorrected");
-   
-   
+
    gStyle->SetEndErrorSize(0);
    
    TLegend *leg_ele,*leg_mu;
    
    c_ele->cd();
    mg_electrons->Draw("AP");
+	mg_electrons->GetXaxis()->SetTitle("p_{T} [GeV]");
+	mg_electrons->GetYaxis()->SetTitle("Fake Rate");
+	mg_electrons->SetTitle("Electron fake rate");
    mg_electrons->SetMaximum(0.35);
    leg_ele = CreateLegend_FR("left",FR_SS_electron_EB_unc,FR_SS_electron_EB,FR_SS_electron_EE_unc,FR_SS_electron_EE);
    leg_ele->Draw();
@@ -1336,6 +1338,9 @@ void SSmethod::PlotFR()
    
    c_mu->cd();
    mg_muons->Draw("AP");
+	mg_muons->GetXaxis()->SetTitle("p_{T} [GeV]");
+	mg_muons->GetYaxis()->SetTitle("Fake Rate");
+	mg_muons->SetTitle("Muon fake rate");
    mg_muons->SetMaximum(0.35);
    leg_mu = CreateLegend_FR("left",FR_SS_muon_EB_unc,FR_SS_muon_EB,FR_SS_muon_EE_unc,FR_SS_muon_EE);
    leg_mu->Draw();
@@ -1387,6 +1392,7 @@ void SSmethod::PlotDataMC( TString variable_name, TString folder )
          stack->SetMaximum((data_max + data_max_error)*1.1);
          
          TString _fs_label;
+			if ( i_fs == Settings::fs4l) _fs_label = "m_{4#font[12]{l}} (GeV)";
          if ( i_fs == Settings::fs4e) _fs_label = "m_{4#font[12]{e}} (GeV)";
          if ( i_fs == Settings::fs4mu) _fs_label = "m_{4#font[12]{#mu}} (GeV)";
          if ( i_fs == Settings::fs2e2mu) _fs_label = "m_{2#font[12]{e}2#font[12]{#mu}} (GeV)";
@@ -1435,8 +1441,8 @@ void SSmethod::PlotZX( TString variable_name, TString folder )
    {
       for ( int i_cat = 0; i_cat <= Settings::inclusive; i_cat++ )
       {
-         histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->SetFillColor(kGreen);
-         histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->SetLineColor(kGreen);
+         histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->SetFillColor(kGreen-1);
+         histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->SetLineColor(kGreen-1);
          
          histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->Draw("HIST");
          
@@ -1445,7 +1451,7 @@ void SSmethod::PlotZX( TString variable_name, TString folder )
          if ( i_fs == Settings::fs4mu)   _fs_label = "m_{4#font[12]{#mu}} (GeV)";
          if ( i_fs == Settings::fs2e2mu) _fs_label = "m_{2#font[12]{e}2#font[12]{#mu}} (GeV)";
          if ( i_fs == Settings::fs2mu2e) _fs_label = "m_{2#font[12]{#mu}2#font[12]{e}} (GeV)";
-		 if ( i_fs == Settings::fs4l)    _fs_label = "m_{4#font[12]{l}} (GeV)";
+			if ( i_fs == Settings::fs4l)    _fs_label = "m_{4#font[12]{l}} (GeV)";
          histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetXaxis()->SetTitle(_fs_label);
          histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetXaxis()->SetTitleSize(0.04);
          histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetXaxis()->SetLabelSize(0.04);

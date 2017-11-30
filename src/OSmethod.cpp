@@ -861,10 +861,12 @@ void OSmethod::PlotDataMC_3P1F( TString variable_name, TString folder )
 void OSmethod::PlotZXContributions( TString folder )
 {
    TCanvas *c, *c_zx;
+	double yield;
+	double int_error;
    c    = new TCanvas("c", "c", 600, 600);
    c_zx = new TCanvas("c_zx", "c_zx", 600, 600);
-   
-   for( int i_fs = 0; i_fs <= Settings::fs4l ; i_fs++ )
+	
+	for( int i_fs = 0; i_fs <= Settings::fs4l ; i_fs++ )
    {
       c->cd();
       
@@ -911,14 +913,26 @@ void OSmethod::PlotZXContributions( TString folder )
       SavePlots(c, _out_file_name);
       
       c_zx->cd();
-      histos_ZX[i_fs][Settings::inclusive]->SetLineColor(420);
-      histos_ZX[i_fs][Settings::inclusive]->SetFillColor(411);
+		
+      histos_ZX[i_fs][Settings::inclusive]->SetLineColor(kGreen-1);
+      histos_ZX[i_fs][Settings::inclusive]->SetFillColor(kGreen-1);
       histos_ZX[i_fs][Settings::inclusive]->Draw("HIST");
       lumi->set_lumi(c_zx, _lumi, 0);
       
       _out_file_name = folder + "/" + "ZX_OS_" + _s_final_state.at(i_fs) + "_" + _s_category.at(Settings::inclusive);
       SavePlots(c_zx, _out_file_name);
    }
+	
+	cout << endl;
+	cout << "==============================================================" << endl;
+	cout << "[INFO] Control printout for OS Z+X yields in final states "<< endl;
+	cout << "==============================================================" << endl;
+	for( int i_fs = 0; i_fs <= Settings::fs4l ; i_fs++ )
+	{
+		yield = histos_ZX[i_fs][Settings::inclusive]->IntegralAndError(0,histos_ZX[i_fs][Settings::inclusive]->GetSize() - 2,int_error);
+		cout << "Category: " << _s_category.at(Settings::inclusive) << "   Final state: " << _s_final_state.at(i_fs) << endl;
+		cout << yield << " +/- " << int_error << " (stat.) " << endl;
+	}
 }
 //========================================================================================================
 

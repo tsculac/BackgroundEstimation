@@ -14,6 +14,7 @@
 #include "TH2.h"
 #include "TMath.h"
 #include "TStyle.h"
+#include "TLegend.h"
 #include "TSystem.h"
 #include "THStack.h"
 #include "TTree.h"
@@ -70,7 +71,28 @@ int matchFlavour(int MatchJetPartonFlavour, int GenMCTruthMatchId, int GenMCTrut
 	return flavour;
 }
 
+TLegend* BuildLegend(TH1D *conv, TH1D *lep, TH1D *nomatch, TH1D *light, TH1D *heavy)
+{
+	TLegend *leg;
+	leg = new TLegend(0.5,0.5,0.9,0.9);
+	leg->AddEntry(conv,"Conversion","L");
+	leg->AddEntry(lep,"Real lepton","L");
+	leg->AddEntry(nomatch, "No match","L");
+	leg->AddEntry(light, "Light jet","L");
+	leg->AddEntry(heavy, "Heavy jet","L");
+	
+	return leg;
+}
 
+TLegend* BuildLegend2(TH1D *light, TH1D *heavy)
+{
+	TLegend *leg;
+	leg = new TLegend(0.1,0.7,0.4,0.9);
+	leg->AddEntry(light, "Light jet","L");
+	leg->AddEntry(heavy, "Heavy jet","L");
+	
+	return leg;
+}
 
 void fillDistributionsCRZLL(TString input_file_name, bool isData = false)
 {
@@ -446,6 +468,10 @@ void Reset()
 void PlotDistributions()
 {
 	gROOT->SetBatch();
+	gStyle->SetOptStat(0);
+	
+	TFile* fOutHistos = new TFile("histos.root", "recreate");
+	fOutHistos->cd();
 	
 	_s_CR.push_back("SS");
 	_s_CR.push_back("OS");
@@ -464,7 +490,7 @@ void PlotDistributions()
 	
 	float lumi = 35.9;
 	
-	TString path = "NewData/";
+	TString path = "NewMC/";
 	TString file_name = "/ZZ4lAnalysis.root";
 	
 	TString DY       = path + "DYJetsToLL_M50" + file_name;
@@ -512,30 +538,31 @@ void PlotDistributions()
 	
 	for (int i_jf = 0; i_jf < LeptonFlavours::NUM_OF_FLAVOURS; i_jf++)
 	{
-		histo_name ="h_LepPT_SS_ele_EE_"+_s_MatchFlavour.at(i_jf);
-		h_LepPT[i_jf][0][0][0] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
 		histo_name ="h_LepPT_SS_ele_EB_"+_s_MatchFlavour.at(i_jf);
+		h_LepPT[i_jf][0][0][0] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
+		histo_name ="h_LepPT_SS_ele_EE_"+_s_MatchFlavour.at(i_jf);
 		h_LepPT[i_jf][0][1][0] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
-		histo_name ="h_LepPT_SS_mu_EE_"+_s_MatchFlavour.at(i_jf);
-		h_LepPT[i_jf][1][0][0] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
 		histo_name ="h_LepPT_SS_mu_EB_"+_s_MatchFlavour.at(i_jf);
+		h_LepPT[i_jf][1][0][0] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
+		histo_name ="h_LepPT_SS_mu_EE_"+_s_MatchFlavour.at(i_jf);
 		h_LepPT[i_jf][1][1][0] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
 		
-		histo_name ="h_LepPT_OS_ele_EE_"+_s_MatchFlavour.at(i_jf);
-		h_LepPT[i_jf][0][0][1] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
 		histo_name ="h_LepPT_OS_ele_EB_"+_s_MatchFlavour.at(i_jf);
+		h_LepPT[i_jf][0][0][1] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
+		histo_name ="h_LepPT_OS_ele_EE_"+_s_MatchFlavour.at(i_jf);
 		h_LepPT[i_jf][0][1][1] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
-		histo_name ="h_LepPT_OS_mu_EE_"+_s_MatchFlavour.at(i_jf);
-		h_LepPT[i_jf][1][0][1] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
 		histo_name ="h_LepPT_OS_mu_EB_"+_s_MatchFlavour.at(i_jf);
+		h_LepPT[i_jf][1][0][1] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
+		histo_name ="h_LepPT_OS_mu_EE_"+_s_MatchFlavour.at(i_jf);
 		h_LepPT[i_jf][1][1][1] = new TH1D(histo_name,histo_name,_n_pT_bins, pT_bins);
 	}
 	
 	fillDistributionsCRZLL(DY);
-	fillDistributionsCRZLL(TTJets);
-	fillDistributionsCRZLL(WZTo3LNu);
+//	fillDistributionsCRZLL(TTJets);
+//	fillDistributionsCRZLL(WZTo3LNu);
 	
 	TCanvas *c1 = new TCanvas("c1","c1",900,900);
+	TLegend *leg;
 	TString canvas_name;
 	c1->cd();
 	TH1D* sum_pT;
@@ -546,6 +573,37 @@ void PlotDistributions()
 		{
 			for (int i_CR = 0; i_CR < 2; i_CR++)
 			{
+				h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->SetLineColor(kBlue);
+				h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->SetLineWidth(4);
+				h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->GetXaxis()->SetTitle("p_{T} [GeV]");
+				h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->GetYaxis()->SetTitle("Events");
+				h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->SetMarkerColor(kBlue);
+				h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->Draw("HIST ");
+				h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][i_CR]->SetLineColor(kBlack);
+				h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][i_CR]->SetLineWidth(4);
+				h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][i_CR]->SetMarkerColor(kBlack);
+				h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][i_CR]->Draw("HIST SAME");
+				h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][i_CR]->SetLineColor(kRed);
+				h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][i_CR]->SetLineWidth(4);
+				h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][i_CR]->SetMarkerColor(kRed);
+				h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][i_CR]->Draw("HIST SAME");
+				h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][i_CR]->SetLineColor(kGreen);
+				h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][i_CR]->SetLineWidth(4);
+				h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][i_CR]->SetMarkerColor(kGreen);
+				h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][i_CR]->Draw("HIST SAME");
+				h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][i_CR]->SetLineColor(kViolet);
+				h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][i_CR]->SetLineWidth(4);
+				h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][i_CR]->SetMarkerColor(kViolet);
+				h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][i_CR]->Draw("HIST SAME");
+				leg = BuildLegend(h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][i_CR],h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][i_CR],h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][i_CR],h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR],h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][i_CR]);
+				leg->Draw();
+				canvas_name = "./MCTruthStudy/CRZLL_"+_s_CR.at(i_CR)+"_PT_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
+				c1->SaveAs(canvas_name);
+				canvas_name = "./MCTruthStudy/CRZLL_"+_s_CR.at(i_CR)+"_PT_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".png";
+				c1->SaveAs(canvas_name);
+				
+				c1->Clear();
+				
 				sum_pT = (TH1D*)h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->Clone();
 				sum_pT->Add(h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][i_CR]);
 				sum_pT->Add(h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][i_CR]);
@@ -555,6 +613,8 @@ void PlotDistributions()
 				h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->Divide(sum_pT);
 				h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->SetLineColor(kBlue);
 				h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->SetMarkerColor(kBlue);
+				h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->GetXaxis()->SetTitle("p_{T} [GeV]");
+				h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->GetYaxis()->SetTitle("Fraction of events");
 				h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->SetMaximum(1.);
 				h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->SetMinimum(0.);
 				h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR]->Draw("HIST ");
@@ -575,9 +635,11 @@ void PlotDistributions()
 				h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][i_CR]->SetMarkerColor(kViolet);
 				h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][i_CR]->Draw("HIST SAME");
 				
-				canvas_name = "./MCTruthStudy/CRZLL_"+_s_CR.at(i_CR)+"_PT_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
+				leg = BuildLegend(h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][i_CR],h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][i_CR],h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][i_CR],h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][i_CR],h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][i_CR]);
+				leg->Draw();
+				canvas_name = "./MCTruthStudy/CRZLL_"+_s_CR.at(i_CR)+"_PT_fraction_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
 				c1->SaveAs(canvas_name);
-				canvas_name = "./MCTruthStudy/CRZLL_"+_s_CR.at(i_CR)+"_PT_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".png";
+				canvas_name = "./MCTruthStudy/CRZLL_"+_s_CR.at(i_CR)+"_PT_fraction_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".png";
 				c1->SaveAs(canvas_name);
 				
 				sum_pT->Reset();
@@ -611,32 +673,32 @@ void PlotDistributions()
 	data_MissingHit_EB_OS = (TH1D*)h_LepMissingHit[0][0][1]->Clone();
 	data_MissingHit_EE_OS = (TH1D*)h_LepMissingHit[0][1][1]->Clone();
 	
-	MC_MissingHit_EB_SS->DrawNormalized("HIST");
-	data_MissingHit_EB_SS->DrawNormalized("P SAME");
+	MC_MissingHit_EB_SS->Draw("HIST");
+	data_MissingHit_EB_SS->Draw("P SAME");
 	canvas_name = "./MCTruthStudy/CRZLL_SS_avgMissingHit_distribution_ele_" + _s_EEorEB.at(0) + ".pdf";
 	c1->SaveAs(canvas_name);
 	canvas_name = "./MCTruthStudy/CRZLL_SS_avgMissingHit_distribution_ele_" + _s_EEorEB.at(0) + ".png";
 	c1->SaveAs(canvas_name);
-	MC_MissingHit_EE_SS->DrawNormalized("HIST");
-	data_MissingHit_EE_SS->DrawNormalized("P SAME");
+	MC_MissingHit_EE_SS->Draw("HIST");
+	data_MissingHit_EE_SS->Draw("P SAME");
 	canvas_name = "./MCTruthStudy/CRZLL_SS_avgMissingHit_distribution_ele_" + _s_EEorEB.at(1) + ".pdf";
 	c1->SaveAs(canvas_name);
 	canvas_name = "./MCTruthStudy/CRZLL_SS_avgMissingHit_distribution_ele_" + _s_EEorEB.at(1) + ".png";
 	c1->SaveAs(canvas_name);
 	
-	MC_MissingHit_EB_OS->DrawNormalized("HIST");
-	data_MissingHit_EB_OS->DrawNormalized("P SAME");
+	MC_MissingHit_EB_OS->Draw("HIST");
+	data_MissingHit_EB_OS->Draw("P SAME");
 	canvas_name = "./MCTruthStudy/CRZLL_OS_avgMissingHit_distribution_ele_" + _s_EEorEB.at(0) + ".pdf";
 	c1->SaveAs(canvas_name);
 	canvas_name = "./MCTruthStudy/CRZLL_OS_avgMissingHit_distribution_ele_" + _s_EEorEB.at(0) + ".png";
 	c1->SaveAs(canvas_name);
-	MC_MissingHit_EE_OS->DrawNormalized("HIST");
-	data_MissingHit_EE_OS->DrawNormalized("P SAME");
+	MC_MissingHit_EE_OS->Draw("HIST");
+	data_MissingHit_EE_OS->Draw("P SAME");
 	canvas_name = "./MCTruthStudy/CRZLL_OS_avgMissingHit_distribution_ele_" + _s_EEorEB.at(1) + ".pdf";
 	c1->SaveAs(canvas_name);
 	canvas_name = "./MCTruthStudy/CRZLL_OS_avgMissingHit_distribution_ele_" + _s_EEorEB.at(1) + ".png";
 	c1->SaveAs(canvas_name);
-	
+
 	
 	for (int i_jf = 0; i_jf < LeptonFlavours::NUM_OF_FLAVOURS; i_jf++)
 	{
@@ -672,46 +734,90 @@ void PlotDistributions()
 	
 	Reset();
 	fillDistributionsCRZL(DY);
-	fillDistributionsCRZL(TTJets);
-	fillDistributionsCRZL(WZTo3LNu);
-
+//	fillDistributionsCRZL(TTJets);
+//	fillDistributionsCRZL(WZTo3LNu);
+	
 	c1->cd();
 	for(int i_lep_flav = 0; i_lep_flav < 2; i_lep_flav++)
 	{
 		for(int i_EBorEE = 0; i_EBorEE < 2; i_EBorEE++)
 		{
+			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->SetLineColor(kBlue);
+			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->SetLineWidth(4);
+			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->SetMarkerColor(kBlue);
+			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->GetXaxis()->SetTitle("p_{T} [GeV]");
+			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->GetYaxis()->SetTitle("Events");
+			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->Draw("HIST ");
+			h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][0]->SetLineColor(kBlack);
+			h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][0]->SetLineWidth(4);
+			h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][0]->SetMarkerColor(kBlack);
+			h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][0]->Draw("HIST SAME");
+			h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][0]->SetLineColor(kRed);
+			h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][0]->SetLineWidth(4);
+			h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][0]->SetMarkerColor(kRed);
+			h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][0]->Draw("HIST SAME");
+			h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][0]->SetLineColor(kGreen);
+			h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][0]->SetLineWidth(4);
+			h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][0]->SetMarkerColor(kGreen);
+			h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][0]->Draw("HIST SAME");
+			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][0]->SetLineColor(kViolet);
+			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][0]->SetLineWidth(4);
+			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][0]->SetMarkerColor(kViolet);
+			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][0]->Draw("HIST SAME");
+	
+			leg = BuildLegend(h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][0],h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][0],h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][0],h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0],h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][0]);
+			leg->Draw();
+			
+			canvas_name = "./MCTruthStudy/CRZL_PT_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
+			c1->SaveAs(canvas_name);
+			canvas_name = "./MCTruthStudy/CRZL_PT_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".png";
+			c1->SaveAs(canvas_name);
+			
+			c1->Clear();
+			
 			sum_pT = (TH1D*)h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->Clone();
 			sum_pT->Add(h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][0]);
 			sum_pT->Add(h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][0]);
 			sum_pT->Add(h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][0]);
 			sum_pT->Add(h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][0]);
-			
+			fOutHistos->cd();
 			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->Divide(sum_pT);
 			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->SetLineColor(kBlue);
 			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->SetMarkerColor(kBlue);
 			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->SetMaximum(1.0);
 			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->SetMinimum(-0.01);
+			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->GetXaxis()->SetTitle("p_{T} [GeV]");
+			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->GetYaxis()->SetTitle("Fraction of events");
 			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->Draw("HIST ");
+			h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0]->Write();
 			h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][0]->Divide(sum_pT);
 			h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][0]->SetLineColor(kBlack);
 			h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][0]->SetMarkerColor(kBlack);
 			h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][0]->Draw("HIST SAME");
+			h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][0]->Write();
 			h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][0]->Divide(sum_pT);
 			h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][0]->SetLineColor(kRed);
 			h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][0]->SetMarkerColor(kRed);
 			h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][0]->Draw("HIST SAME");
+			h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][0]->Write();
 			h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][0]->Divide(sum_pT);
 			h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][0]->SetLineColor(kGreen);
 			h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][0]->SetMarkerColor(kGreen);
 			h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][0]->Draw("HIST SAME");
+			h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][0]->Write();
 			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][0]->Divide(sum_pT);
 			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][0]->SetLineColor(kViolet);
 			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][0]->SetMarkerColor(kViolet);
 			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][0]->Draw("HIST SAME");
+			h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][0]->Write();
 			
-			canvas_name = "./MCTruthStudy/CRZL_PT_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
+
+			leg = BuildLegend(h_LepPT[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE][0],h_LepPT[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE][0],h_LepPT[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE][0],h_LepPT[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE][0],h_LepPT[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE][0]);
+			leg->Draw();
+			
+			canvas_name = "./MCTruthStudy/CRZL_PT_fraction_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
 			c1->SaveAs(canvas_name);
-			canvas_name = "./MCTruthStudy/CRZL_PT_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".png";
+			canvas_name = "./MCTruthStudy/CRZL_PT_fraction_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".png";
 			c1->SaveAs(canvas_name);
 			
 			sum_pT->Reset();
@@ -722,21 +828,31 @@ void PlotDistributions()
 	{
 		for(int i_EBorEE = 0; i_EBorEE < 2; i_EBorEE++)
 		{
+			h_LepSIP[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->GetXaxis()->SetTitle("SIP");
+			h_LepSIP[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->GetYaxis()->SetTitle("a.u.");
 			h_LepSIP[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->SetLineColor(kBlue);
+			h_LepSIP[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->SetLineWidth(3);
 			h_LepSIP[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->SetMarkerColor(kBlue);
 			h_LepSIP[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->DrawNormalized("HIST");
 			h_LepSIP[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE]->SetLineColor(kBlack);
+			h_LepSIP[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE]->SetLineWidth(3);
 			h_LepSIP[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE]->SetMarkerColor(kBlack);
 			h_LepSIP[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE]->DrawNormalized("HIST SAME");
 			h_LepSIP[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->SetLineColor(kRed);
+			h_LepSIP[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->SetLineWidth(3);
 			h_LepSIP[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->SetMarkerColor(kRed);
 			h_LepSIP[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->DrawNormalized("HIST SAME");
 			h_LepSIP[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE]->SetLineColor(kGreen);
+			h_LepSIP[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE]->SetLineWidth(3);
 			h_LepSIP[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE]->SetMarkerColor(kGreen);
 			h_LepSIP[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE]->DrawNormalized("HIST SAME");
 			h_LepSIP[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->SetLineColor(kViolet);
+			h_LepSIP[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->SetLineWidth(3);
 			h_LepSIP[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->SetMarkerColor(kViolet);
 			h_LepSIP[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE]->DrawNormalized("HIST SAME");
+			
+			leg = BuildLegend(h_LepSIP[LeptonFlavours::Conversion][i_lep_flav][i_EBorEE],h_LepSIP[LeptonFlavours::Lepton][i_lep_flav][i_EBorEE],h_LepSIP[LeptonFlavours::NoMatch][i_lep_flav][i_EBorEE],h_LepSIP[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE],h_LepSIP[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]);
+			leg->Draw();
 			
 			canvas_name = "./MCTruthStudy/CRZL_SIP_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
 			c1->SaveAs(canvas_name);
@@ -749,12 +865,19 @@ void PlotDistributions()
 	{
 		for(int i_EBorEE = 0; i_EBorEE < 2; i_EBorEE++)
 		{
+			h_JetbTagger[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->GetXaxis()->SetTitle("B-tagger score");
+			h_JetbTagger[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->GetYaxis()->SetTitle("a.u.");
 			h_JetbTagger[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->SetLineColor(kBlue);
+			h_JetbTagger[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->SetLineWidth(4);
 			h_JetbTagger[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->SetMarkerColor(kBlue);
 			h_JetbTagger[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE]->DrawNormalized("HIST");
 			h_JetbTagger[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->SetLineColor(kRed);
+			h_JetbTagger[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->SetLineWidth(4);
 			h_JetbTagger[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->SetMarkerColor(kRed);
 			h_JetbTagger[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]->DrawNormalized("HIST SAME");
+			
+			leg = BuildLegend2(h_JetbTagger[LeptonFlavours::LightJet][i_lep_flav][i_EBorEE],h_JetbTagger[LeptonFlavours::HeavyJet][i_lep_flav][i_EBorEE]);
+			leg->Draw();
 			
 			canvas_name = "./MCTruthStudy/CRZL_bTaggScore_distribution_" + _s_LepFlav.at(i_lep_flav) + "_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
 			c1->SaveAs(canvas_name);
@@ -765,22 +888,31 @@ void PlotDistributions()
 	
 	for(int i_EBorEE = 0; i_EBorEE < 2; i_EBorEE++)
 	{
+		h_LepBDT[LeptonFlavours::LightJet][0][i_EBorEE]->GetXaxis()->SetTitle("BDT score");
+		h_LepBDT[LeptonFlavours::LightJet][0][i_EBorEE]->GetYaxis()->SetTitle("a.u.");
 		h_LepBDT[LeptonFlavours::LightJet][0][i_EBorEE]->SetLineColor(kBlue);
+		h_LepBDT[LeptonFlavours::LightJet][0][i_EBorEE]->SetLineWidth(3);
 		h_LepBDT[LeptonFlavours::LightJet][0][i_EBorEE]->SetMarkerColor(kBlue);
 		h_LepBDT[LeptonFlavours::LightJet][0][i_EBorEE]->DrawNormalized("HIST");
 		h_LepBDT[LeptonFlavours::NoMatch][0][i_EBorEE]->SetLineColor(kBlack);
+		h_LepBDT[LeptonFlavours::NoMatch][0][i_EBorEE]->SetLineWidth(3);
 		h_LepBDT[LeptonFlavours::NoMatch][0][i_EBorEE]->SetMarkerColor(kBlack);
 		h_LepBDT[LeptonFlavours::NoMatch][0][i_EBorEE]->DrawNormalized("HIST SAME");
 		h_LepBDT[LeptonFlavours::HeavyJet][0][i_EBorEE]->SetLineColor(kRed);
+		h_LepBDT[LeptonFlavours::HeavyJet][0][i_EBorEE]->SetLineWidth(3);
 		h_LepBDT[LeptonFlavours::HeavyJet][0][i_EBorEE]->SetMarkerColor(kRed);
 		h_LepBDT[LeptonFlavours::HeavyJet][0][i_EBorEE]->DrawNormalized("HIST SAME");
 		h_LepBDT[LeptonFlavours::Conversion][0][i_EBorEE]->SetLineColor(kGreen);
+		h_LepBDT[LeptonFlavours::Conversion][0][i_EBorEE]->SetLineWidth(3);
 		h_LepBDT[LeptonFlavours::Conversion][0][i_EBorEE]->SetMarkerColor(kGreen);
 		h_LepBDT[LeptonFlavours::Conversion][0][i_EBorEE]->DrawNormalized("HIST SAME");
 		h_LepBDT[LeptonFlavours::Lepton][0][i_EBorEE]->SetLineColor(kViolet);
+		h_LepBDT[LeptonFlavours::Lepton][0][i_EBorEE]->SetLineWidth(3);
 		h_LepBDT[LeptonFlavours::Lepton][0][i_EBorEE]->SetMarkerColor(kViolet);
 		h_LepBDT[LeptonFlavours::Lepton][0][i_EBorEE]->DrawNormalized("HIST SAME");
 		
+		leg = BuildLegend(h_LepBDT[LeptonFlavours::Conversion][0][i_EBorEE],h_LepBDT[LeptonFlavours::Lepton][0][i_EBorEE],h_LepBDT[LeptonFlavours::NoMatch][0][i_EBorEE],h_LepBDT[LeptonFlavours::LightJet][0][i_EBorEE],h_LepBDT[LeptonFlavours::HeavyJet][0][i_EBorEE]);
+		leg->Draw();
 		canvas_name = "./MCTruthStudy/CRZL_BDT_distribution_ele_" + _s_EEorEB.at(i_EBorEE) + ".pdf";
 		c1->SaveAs(canvas_name);
 		canvas_name = "./MCTruthStudy/CRZL_BDT_distribution_ele_" + _s_EEorEB.at(i_EBorEE) + ".png";
@@ -807,16 +939,20 @@ void PlotDistributions()
 	data_MissingHit_EB = (TH1D*)h_LepMissingHit[0][0][0]->Clone();
 	data_MissingHit_EE = (TH1D*)h_LepMissingHit[0][1][0]->Clone();
 	
-	MC_MissingHit_EB->DrawNormalized("HIST");
-	data_MissingHit_EB->DrawNormalized("P SAME");
+	MC_MissingHit_EB->Draw("HIST");
+	data_MissingHit_EB->Draw("P SAME");
 	canvas_name = "./MCTruthStudy/CRZL_avgMissingHit_distribution_ele_" + _s_EEorEB.at(0) + ".pdf";
 	c1->SaveAs(canvas_name);
 	canvas_name = "./MCTruthStudy/CRZL_avgMissingHit_distribution_ele_" + _s_EEorEB.at(0) + ".png";
 	c1->SaveAs(canvas_name);
-	MC_MissingHit_EE->DrawNormalized("HIST");
-	data_MissingHit_EE->DrawNormalized("P SAME");
+	MC_MissingHit_EE->Draw("HIST");
+	data_MissingHit_EE->Draw("P SAME");
 	canvas_name = "./MCTruthStudy/CRZL_avgMissingHit_distribution_ele_" + _s_EEorEB.at(1) + ".pdf";
 	c1->SaveAs(canvas_name);
 	canvas_name = "./MCTruthStudy/CRZL_avgMissingHit_distribution_ele_" + _s_EEorEB.at(1) + ".png";
 	c1->SaveAs(canvas_name);
+	
+	fOutHistos->Close();
+	delete fOutHistos;
+
 }

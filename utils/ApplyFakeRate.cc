@@ -291,7 +291,6 @@ void fillZXHisto_WithFlavourInfo(TString input_file_name, float lumi, TH1F* m4l_
 		
 		//Determine lepton origin
 		jet1_category = matchFlavour(MatchJetPartonFlavour->at(2), GenMCTruthMatchId->at(2), GenMCTruthMatchMotherId->at(2));
-		
 		jet2_category = matchFlavour(MatchJetPartonFlavour->at(3), GenMCTruthMatchId->at(3), GenMCTruthMatchMotherId->at(3));
 		
 		_event_weight = (lumi * 1000 * xsec * overallEventWeight) / gen_sum_weights;
@@ -300,7 +299,7 @@ void fillZXHisto_WithFlavourInfo(TString input_file_name, float lumi, TH1F* m4l_
 		_yield_SR = _fs_ROS_SS.at(_current_final_state)*GetFakeRate_WithFlavour(LepPt->at(2),LepEta->at(2),LepLepId->at(2),jet1_category)*GetFakeRate_WithFlavour(LepPt->at(3),LepEta->at(3),LepLepId->at(3),jet2_category);
 		m4l_ZX[_current_proces][_current_final_state]->Fill(ZZMass, _yield_SR*_event_weight);
 		
-//		if (m4l_ZX[0][2]->Integral() != m4l_ZX[0][2]->Integral())
+//		if (jet1_category == LeptonFlavours::Conversion || jet2_category == LeptonFlavours::Conversion)
 //		{
 //			cout << "YIELD = " << _yield_SR << endl;
 //			cout << "WEIGHT = " << _event_weight << endl;
@@ -584,6 +583,7 @@ void fillZXHisto_CutBased(TString input_file_name, float lumi, TH1F* m4l_ZX[3][4
 		
 		_event_weight = (lumi * 1000 * xsec * overallEventWeight) / gen_sum_weights;
 		
+		//if (matchFlavour(MatchJetPartonFlavour->at(2), GenMCTruthMatchId->at(2), GenMCTruthMatchMotherId->at(2)) == LeptonFlavours::Conversion || matchFlavour(MatchJetPartonFlavour->at(3), GenMCTruthMatchId->at(3), GenMCTruthMatchMotherId->at(3)) == LeptonFlavours::Conversion) continue;
 		// Calculate yield
 		if(LepisID->at(2) && LepisID->at(3) && LepCombRelIsoPF->at(2) < 0.35 && LepCombRelIsoPF->at(3) < 0.35) m4l_ZX[_current_proces][_current_final_state]->Fill(ZZMass, _event_weight);
 		
@@ -597,52 +597,64 @@ void fillZXHisto_CutBased(TString input_file_name, float lumi, TH1F* m4l_ZX[3][4
 
 void DrawHistos(TH1F* m4l_ZX[3][4], TString FRType)
 {
-	TCanvas *c1 = new TCanvas("c1","c1",900,900);
+	TCanvas *c1 = new TCanvas("c1"+FRType,"c1"+FRType,900,900);
 	THStack *hs_4mu = new THStack("hs_4mu","test stacked histograms");
 	c1->cd();
-	m4l_ZX[0][0]->SetFillColor(kGreen);
+	m4l_ZX[0][0]->SetFillColor(kGreen-1);
 	m4l_ZX[1][0]->SetFillColor(kBlue);
 	m4l_ZX[2][0]->SetFillColor(kViolet);
 	hs_4mu->Add(m4l_ZX[2][0]);
 	hs_4mu->Add(m4l_ZX[1][0]);
 	hs_4mu->Add(m4l_ZX[0][0]);
 	hs_4mu->Draw("HIST");
+	hs_4mu->GetXaxis()->SetTitle("m_{4#mu} [GeV]");
+	hs_4mu->GetYaxis()->SetTitle("Events");
+	if(FRType != "CutBased") hs_4mu->SetMinimum(0.);
 	c1->SaveAs("./MCTruthStudy/ZX_"+FRType+"_FR_4mu.pdf");
 	c1->SaveAs("./MCTruthStudy/ZX_"+FRType+"_FR_4mu.png");
 	
 	c1->cd();
 	THStack *hs_4e = new THStack("hs_4e","test stacked histograms");
-	m4l_ZX[0][1]->SetFillColor(kGreen);
+	m4l_ZX[0][1]->SetFillColor(kGreen-1);
 	m4l_ZX[1][1]->SetFillColor(kBlue);
 	m4l_ZX[2][1]->SetFillColor(kViolet);
 	hs_4e->Add(m4l_ZX[2][1]);
 	hs_4e->Add(m4l_ZX[1][1]);
 	hs_4e->Add(m4l_ZX[0][1]);
 	hs_4e->Draw("HIST");
+	hs_4e->GetXaxis()->SetTitle("m_{4e} [GeV]");
+	hs_4e->GetYaxis()->SetTitle("Events");
+	if(FRType != "CutBased") hs_4e->SetMinimum(0.);
 	c1->SaveAs("./MCTruthStudy/ZX_"+FRType+"_FR_4e.pdf");
 	c1->SaveAs("./MCTruthStudy/ZX_"+FRType+"_FR_4e.png");
 	
 	c1->cd();
 	THStack *hs_2e2mu = new THStack("hs_2e2mu","test stacked histograms");
-	m4l_ZX[0][2]->SetFillColor(kGreen);
+	m4l_ZX[0][2]->SetFillColor(kGreen-1);
 	m4l_ZX[1][2]->SetFillColor(kBlue);
 	m4l_ZX[2][2]->SetFillColor(kViolet);
 	hs_2e2mu->Add(m4l_ZX[2][2]);
 	hs_2e2mu->Add(m4l_ZX[1][2]);
 	hs_2e2mu->Add(m4l_ZX[0][2]);
 	hs_2e2mu->Draw("HIST");
+	hs_2e2mu->GetXaxis()->SetTitle("m_{2e2#mu} [GeV]");
+	hs_2e2mu->GetYaxis()->SetTitle("Events");
+	if(FRType != "CutBased") hs_2e2mu->SetMinimum(0.);
 	c1->SaveAs("./MCTruthStudy/ZX_"+FRType+"_FR_2e2mu.pdf");
 	c1->SaveAs("./MCTruthStudy/ZX_"+FRType+"_FR_2e2mu.png");
 	
 	c1->cd();
 	THStack *hs_2mu2e = new THStack("hs_2mu2e","test stacked histograms");
-	m4l_ZX[0][3]->SetFillColor(kGreen);
+	m4l_ZX[0][3]->SetFillColor(kGreen-1);
 	m4l_ZX[1][3]->SetFillColor(kBlue);
 	m4l_ZX[2][3]->SetFillColor(kViolet);
 	hs_2mu2e->Add(m4l_ZX[2][3]);
 	hs_2mu2e->Add(m4l_ZX[1][3]);
 	hs_2mu2e->Add(m4l_ZX[0][3]);
 	hs_2mu2e->Draw("HIST");
+	hs_2mu2e->GetXaxis()->SetTitle("m_{2#mu2e} [GeV]");
+	hs_2mu2e->GetYaxis()->SetTitle("Events");
+	if(FRType != "CutBased") hs_2mu2e->SetMinimum(0.);
 	c1->SaveAs("./MCTruthStudy/ZX_"+FRType+"_FR_2mu2e.pdf");
 	c1->SaveAs("./MCTruthStudy/ZX_"+FRType+"_FR_2mu2e.png");
 	
@@ -698,6 +710,7 @@ void ResetHistos(TH1F* m4l_ZX[3][4])
 void ApplyFakeRate()
 {
 	gROOT->SetBatch();
+	gStyle->SetOptStat(0);
 	
 	_s_CR.push_back("SS");
 	_s_CR.push_back("OS");
@@ -716,7 +729,7 @@ void ApplyFakeRate()
 	
 	float lumi = 35.9;
 	
-	TString path = "NewData/";
+	TString path = "NewMC/";
 	TString file_name = "/ZZ4lAnalysis.root";
 	
 	TString DY       = path + "DYJetsToLL_M50" + file_name;
@@ -738,26 +751,26 @@ void ApplyFakeRate()
 	m4l_ZX[2][3] = new TH1F("m4l_ZX_WZ_2mu2e","m4l_ZX_2mu2e",40,70.,870.);
 	
 	fillZXHisto_WithFlavourInfo(DY, lumi, m4l_ZX);
-	fillZXHisto_WithFlavourInfo(TTJets, lumi, m4l_ZX);
-	fillZXHisto_WithFlavourInfo(WZTo3LNu, lumi, m4l_ZX);
+	//fillZXHisto_WithFlavourInfo(TTJets, lumi, m4l_ZX);
+	//fillZXHisto_WithFlavourInfo(WZTo3LNu, lumi, m4l_ZX);
 	DrawHistos(m4l_ZX, "FlavourInfo");
 	ResetHistos(m4l_ZX);
 	
 	fillZXHisto(true, DY, lumi, m4l_ZX);
-	fillZXHisto(true, TTJets, lumi, m4l_ZX);
-	fillZXHisto(true, WZTo3LNu, lumi, m4l_ZX);
+	//fillZXHisto(true, TTJets, lumi, m4l_ZX);
+	//fillZXHisto(true, WZTo3LNu, lumi, m4l_ZX);
 	DrawHistos(m4l_ZX, "Average_ConversionCorrected");
 	ResetHistos(m4l_ZX);
 	
 	fillZXHisto(false, DY, lumi, m4l_ZX);
-	fillZXHisto(false, TTJets, lumi, m4l_ZX);
-	fillZXHisto(false, WZTo3LNu, lumi, m4l_ZX);
+	//fillZXHisto(false, TTJets, lumi, m4l_ZX);
+	//fillZXHisto(false, WZTo3LNu, lumi, m4l_ZX);
 	DrawHistos(m4l_ZX, "Average_UnCorrected");
 	ResetHistos(m4l_ZX);
 	
 	fillZXHisto_CutBased(DY, lumi, m4l_ZX);
-	fillZXHisto_CutBased(TTJets, lumi, m4l_ZX);
-	fillZXHisto_CutBased(WZTo3LNu, lumi, m4l_ZX);
+	//fillZXHisto_CutBased(TTJets, lumi, m4l_ZX);
+	//fillZXHisto_CutBased(WZTo3LNu, lumi, m4l_ZX);
 	DrawHistos(m4l_ZX, "CutBased");
 	ResetHistos(m4l_ZX);
 }

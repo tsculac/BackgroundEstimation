@@ -79,6 +79,7 @@ void OSmethod::FillFRHistos( TString input_file_data_name )
 	Int_t _failMETCut = 0;
 	Int_t _passingSelection = 0;
 	Int_t _faillingSelection = 0;
+	Int_t _faillingJPsiMassCut = 0;
 
    for (Long64_t jentry=0; jentry<nentries;jentry++)
    {
@@ -86,14 +87,21 @@ void OSmethod::FillFRHistos( TString input_file_data_name )
       if (ientry < 0) break;
       nb = fChain->GetEntry(jentry);
       nbytes += nb;
-	   
+			   
       _total_events++;
+		
+		TLorentzVector p1,p2,p3;
+		p1.SetPtEtaPhiM(LepPt->at(0), LepEta->at(0), LepPhi->at(0), 0.);
+		p2.SetPtEtaPhiM(LepPt->at(1), LepEta->at(1), LepPhi->at(1), 0.);
+		p3.SetPtEtaPhiM(LepPt->at(2), LepEta->at(2), LepPhi->at(2), 0.);
 	   
       if ( abs(Z1Mass - 91.2) > 7. ) {_failZ1MassCut++; continue;}
       if ( (LepPt->at(0) > LepPt->at(1)) && (LepPt->at(0) < 20. || LepPt->at(1) < 10.) ) {_failLepPtCut++; continue;}
       if ( (LepPt->at(1) > LepPt->at(0)) && (LepPt->at(1) < 20. || LepPt->at(0) < 10.) ) {_failLepPtCut++; continue;}
       if ( LepSIP->at(2) > 4.) {_failSIPCut++; continue;}
       if ( PFMET > 25. ) {_failMETCut++; continue;}
+		if ( (LepLepId->at(2) < 0 && LepLepId->at(0) > 0 && (p1+p3).M() < 4.) || (LepLepId->at(2) < 0 && LepLepId->at(1) > 0 && (p2+p3).M() < 4.) ) {_faillingJPsiMassCut++; continue;}
+		if ( (LepLepId->at(2) > 0 && LepLepId->at(0) < 0 && (p1+p3).M() < 4.) || (LepLepId->at(2) > 0 && LepLepId->at(1) < 0 && (p2+p3).M() < 4.) ) {_faillingJPsiMassCut++; continue;}
       else
       {
          // Final event weight
@@ -127,6 +135,7 @@ void OSmethod::FillFRHistos( TString input_file_data_name )
 		cout << "[INFO] Events lost after LepPt > 20,10 GeV cut  = " << _failLepPtCut << endl;
 		cout << "[INFO] Events lost after SIP < 4 cut  = " << _failSIPCut << endl;
 		cout << "[INFO] Events lost after MET < 25 cut  = " << _failMETCut << endl;
+		cout << "[INFO] Events lost after m_ll > 4 cut  = " << _faillingJPsiMassCut << endl;
 		cout << "[INFO] Total events left = " << _passingSelection + _faillingSelection << endl;
 		cout << "[INFO] Passing selection = " << _passingSelection  << endl;
 		cout << "[INFO] Failling selection = " << _faillingSelection << endl;
@@ -225,7 +234,7 @@ void OSmethod::MakeHistogramsZX( TString input_file_data_name, TString  input_fi
       nbytes += nb;
       
       if (!(test_bit(CRflag, CRZLLos_2P2F)) && !(test_bit(CRflag, CRZLLos_3P1F))) continue;
-      
+		
       _current_final_state = FindFinalState();
       
       for ( int j = 0; j < nCleanedJetsPt30; j++)
@@ -592,6 +601,17 @@ void OSmethod::FillZXInclusive( bool remove_negative_bins )
          h_from3P1F_SR_final[i_fs][i_cat]->Add(h_from2P2F_SR[i_fs][i_cat], -2.);
       }
    }
+	
+	if ( remove_negative_bins )
+	{
+		for (int i_fs = 0; i_fs <= Settings::fs4l; i_fs++)
+		{
+			for (int i_cat = 0; i_cat <= Settings::inclusive; i_cat++)
+			{
+				RemoveNegativeBins1D(h_from3P1F_SR_final[i_fs][i_cat]);
+			}
+		}
+	}
    
    for (int i_fs = 0; i_fs <= Settings::fs4l; i_fs++)
    {
@@ -601,18 +621,6 @@ void OSmethod::FillZXInclusive( bool remove_negative_bins )
          histos_ZX[i_fs][i_cat]->Add(h_from2P2F_SR[i_fs][i_cat], 1.);
       }
    }
-	
-  if ( remove_negative_bins )
-	{
-		for (int i_fs = 0; i_fs <= Settings::fs4l; i_fs++)
-		{
-			for (int i_cat = 0; i_cat <= Settings::inclusive; i_cat++)
-			{
-				RemoveNegativeBins1D(histos_ZX[i_fs][i_cat]);
-			}
-		}
-	}
-   
 
    
    cout << "[INFO] All Z+X histograms summed." << endl;
@@ -733,10 +741,10 @@ void OSmethod::PlotDataMC_2P2F( TString variable_name, TString folder )
       histos_1D[Settings::reg2P2F][Settings::Data][i_fs][Settings::inclusive]->SetLineColor(kBlack);
       
       THStack *stack = new THStack( "stack", "stack" );
+		stack->Add(histos_1D[Settings::reg2P2F][Settings::qqZZ][i_fs][Settings::inclusive]);
       stack->Add(histos_1D[Settings::reg2P2F][Settings::WZ][i_fs][Settings::inclusive]);
-      stack->Add(histos_1D[Settings::reg2P2F][Settings::qqZZ][i_fs][Settings::inclusive]);
+		stack->Add(histos_1D[Settings::reg2P2F][Settings::ttbar][i_fs][Settings::inclusive]);
       stack->Add(histos_1D[Settings::reg2P2F][Settings::DY][i_fs][Settings::inclusive]);
-      stack->Add(histos_1D[Settings::reg2P2F][Settings::ttbar][i_fs][Settings::inclusive]);
    
       stack->Draw("HIST");
       
@@ -809,11 +817,11 @@ void OSmethod::PlotDataMC_3P1F( TString variable_name, TString folder )
       histos_1D[Settings::reg3P1F][Settings::Data][i_fs][Settings::inclusive]->SetLineColor(kBlack);
       
       THStack *stack = new THStack( "stack", "stack" );
-      stack->Add(histos_1D[Settings::reg3P1F][Settings::WZ][i_fs][Settings::inclusive]);
-      stack->Add(histos_1D[Settings::reg3P1F][Settings::qqZZ][i_fs][Settings::inclusive]);
+		stack->Add(histos_1D[Settings::reg3P1F][Settings::qqZZ][i_fs][Settings::inclusive]);
+		stack->Add(histos_1D[Settings::reg3P1F][Settings::WZ][i_fs][Settings::inclusive]);
+		stack->Add(histos_1D[Settings::reg3P1F][Settings::ttbar][i_fs][Settings::inclusive]);
       stack->Add(histos_1D[Settings::reg3P1F][Settings::DY][i_fs][Settings::inclusive]);
-      stack->Add(histos_1D[Settings::reg3P1F][Settings::ttbar][i_fs][Settings::inclusive]);
-      
+		
       stack->Draw("HIST");
       
       h_from2P2F_3P1F[i_fs][Settings::inclusive]->Draw("HIST SAME");

@@ -1104,12 +1104,21 @@ void SSmethod::Calculate_FR_nMissingHits( TString input_file_data_name, TGraphEr
 			{
 				vector_x[i_eta][i_pt].push_back(_N_MissingHits[i_ZMass][i_eta][i_pt]/(_N_Passing[i_ZMass][i_eta][i_pt] + _N_Failling[i_ZMass][i_eta][i_pt]));
 				vector_ex[i_eta][i_pt].push_back(sqrt(pow((1./pow(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt],2)),2)*_N_MissingHits[i_ZMass][i_eta][i_pt] + pow((_N_MissingHits[i_ZMass][i_eta][i_pt]/pow(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt],2)),2)*(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt])));
-				//cout << "N_MH = " << _N_MissingHits[i_ZMass][i_eta][i_pt] << " N_P = " << _N_Passing[i_ZMass][i_eta][i_pt] << " N_F = " << _N_Failling[i_ZMass][i_eta][i_pt] << " vector_x = " << vector_x[i_eta][i_pt][i_ZMass] << " ,i_pT = " << i_pt << " ,i_eta = " << i_eta<< " ,i_ZMass = " << i_ZMass<< endl;
 				
 				vector_y[i_eta][i_pt].push_back(_N_Passing[i_ZMass][i_eta][i_pt]/(_N_Passing[i_ZMass][i_eta][i_pt] + _N_Failling[i_ZMass][i_eta][i_pt]));
 				vector_ey[i_eta][i_pt].push_back(sqrt(pow((_N_Failling[i_ZMass][i_eta][i_pt]/pow(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt],2)),2)*_N_Passing[i_ZMass][i_eta][i_pt] + pow((_N_Passing[i_ZMass][i_eta][i_pt]/pow(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt],2)),2)*_N_Failling[i_ZMass][i_eta][i_pt]));
 				
-				//cout << "vector_y = " << vector_y[i_eta][i_pt][i_ZMass] << " ,i_pT = " << i_pt << " ,i_eta = " << i_eta<< " ,i_ZMass = " << i_ZMass<< endl;
+//				cout << "========================================" << endl;
+//				cout << "[INFO] Z+L printout." << endl;
+//				cout << "========================================" << endl;
+//				cout << "Control region number: " << i_ZMass << endl;
+//				cout << "pT bin = " << _pT_bins[i_pt+1] << " - " <<  _pT_bins[i_pt + 2] << endl;
+//				cout << "eta bin = " << i_eta << endl;
+//				cout << "NP = " << _N_Passing[i_ZMass][i_eta][i_pt] << endl;
+//				cout << "NF = " << _N_Failling[i_ZMass][i_eta][i_pt] << endl;
+//				cout << "MH = " << _N_MissingHits[i_ZMass][i_eta][i_pt] << endl;
+//				cout << "avg_MH = " << vector_x[i_eta][i_pt][i_ZMass] << endl;
+//				cout << "FR = " << vector_y[i_eta][i_pt][i_ZMass] << endl;
 			}
 		}
 		
@@ -1210,7 +1219,6 @@ void SSmethod::Correct_Final_FR( TString input_file_data_name)
 		if ( abs(Z2Flav) != 121) continue; // only electrons
 //		if ( (LepPt->at(0) > LepPt->at(1)) && (LepPt->at(0) < 20. || LepPt->at(1) < 10.) ) continue;
 //		if ( (LepPt->at(1) > LepPt->at(0)) && (LepPt->at(1) < 20. || LepPt->at(0) < 10.) ) continue;
-
 		else
 		{
 			_current_pT_bin = Find_Ele_pT_bin ( LepPt->at(2) );
@@ -1235,7 +1243,6 @@ void SSmethod::Correct_Final_FR( TString input_file_data_name)
 		Float_t sigma_avgMH = 0;
 		_avg_MissingHits_ZLL[Settings::EB][i_pt] = _N_MissingHits_ZLL[Settings::EB][i_pt]/(_N_Passing_ZLL[Settings::EB][i_pt] + _N_Failling_ZLL[Settings::EB][i_pt]);
 		sigma_avgMH = sqrt(pow((1./pow(_N_Failling_ZLL[Settings::EB][i_pt]+_N_Passing_ZLL[Settings::EB][i_pt],2)),2)*_N_MissingHits_ZLL[Settings::EB][i_pt] + pow((_N_MissingHits_ZLL[Settings::EB][i_pt]/pow(_N_Failling_ZLL[Settings::EB][i_pt]+_N_Passing_ZLL[Settings::EB][i_pt],2)),2)*(_N_Failling_ZLL[Settings::EB][i_pt]+_N_Passing_ZLL[Settings::EB][i_pt]));
-		//cout << "avg_Missing_Hits EB = " << _avg_MissingHits_ZLL[Settings::EB][i_pt ] << endl;
 		
 		vector_X[Settings::corrected][Settings::EB][Settings::ele][i_pt] = ((_pT_bins[i_pt + 1] + _pT_bins[i_pt + 2])/2);
 		vector_Y[Settings::corrected][Settings::EB][Settings::ele][i_pt] = (Ele_FR_correction_function[Settings::EB][i_pt]->Eval(_avg_MissingHits_ZLL[Settings::EB][i_pt]));
@@ -1246,13 +1253,31 @@ void SSmethod::Correct_Final_FR( TString input_file_data_name)
 		
 		_avg_MissingHits_ZLL[Settings::EE][i_pt] = _N_MissingHits_ZLL[Settings::EE][i_pt]/(_N_Passing_ZLL[Settings::EE][i_pt] + _N_Failling_ZLL[Settings::EE][i_pt]);
 		sigma_avgMH = sqrt(pow((1./pow(_N_Failling_ZLL[Settings::EE][i_pt]+_N_Passing_ZLL[Settings::EE][i_pt],2)),2)*_N_MissingHits_ZLL[Settings::EE][i_pt] + pow((_N_MissingHits_ZLL[Settings::EE][i_pt]/pow(_N_Failling_ZLL[Settings::EE][i_pt]+_N_Passing_ZLL[Settings::EE][i_pt],2)),2)*(_N_Failling_ZLL[Settings::EE][i_pt]+_N_Passing_ZLL[Settings::EE][i_pt]));
-		//cout << "avg_Missing_Hits EE = " << _avg_MissingHits_ZLL[Settings::EE][i_pt] << endl;
 		
 		vector_X[Settings::corrected][Settings::EE][Settings::ele][i_pt] = ((_pT_bins[i_pt + 1] + _pT_bins[i_pt + 2])/2);
 		vector_Y[Settings::corrected][Settings::EE][Settings::ele][i_pt] = (Ele_FR_correction_function[Settings::EE][i_pt]->Eval(_avg_MissingHits_ZLL[Settings::EE][i_pt]));
 		
 		vector_EX[Settings::corrected][Settings::EE][Settings::ele][i_pt] = ((_pT_bins[i_pt + 2] - _pT_bins[i_pt + 1])/2);
 		vector_EY[Settings::corrected][Settings::EE][Settings::ele][i_pt] = (Ele_FR_correction_function[Settings::EE][i_pt]->Eval(_avg_MissingHits_ZLL[Settings::EE][i_pt]) - Ele_FR_correction_function[Settings::EE][i_pt]->Eval(_avg_MissingHits_ZLL[Settings::EE][i_pt] - sigma_avgMH));
+		
+//		cout << "========================================" << endl;
+//		cout << "[INFO] Z+LL printout." << endl;
+//		cout << "========================================" << endl;
+//		cout << "pT bin = " << _pT_bins[i_pt + 1] << " - " <<  _pT_bins[i_pt + 2] << endl;
+//		cout << "eta bin = " << Settings::EB << endl;
+//		cout << "NP = " << _N_Passing_ZLL[Settings::EB][i_pt] << endl;
+//		cout << "NF = " << _N_Failling_ZLL[Settings::EB][i_pt] << endl;
+//		cout << "avg_MH = " << _avg_MissingHits_ZLL[Settings::EB][i_pt] << endl;
+//		cout << "FR = " << _N_Passing_ZLL[Settings::EB][i_pt]/(_N_Passing_ZLL[Settings::EB][i_pt]+_N_Failling_ZLL[Settings::EB][i_pt]) << endl;
+//		cout << "corr FR = " << vector_Y[Settings::corrected][Settings::EB][Settings::ele][i_pt] << endl;
+//		cout << "========================================" << endl;
+//		cout << "pT bin = " << _pT_bins[i_pt + 1] << " - " <<  _pT_bins[i_pt + 2] << endl;
+//		cout << "eta bin = " << Settings::EE << endl;
+//		cout << "NP = " << _N_Passing_ZLL[Settings::EE][i_pt] << endl;
+//		cout << "NF = " << _N_Failling_ZLL[Settings::EE][i_pt] << endl;
+//		cout << "avg_MH = " << _avg_MissingHits_ZLL[Settings::EE][i_pt] << endl;
+//		cout << "FR = " << _N_Passing_ZLL[Settings::EE][i_pt]/(_N_Passing_ZLL[Settings::EE][i_pt]+_N_Failling_ZLL[Settings::EE][i_pt]) << endl;
+//		cout << "corr FR = " << vector_Y[Settings::corrected][Settings::EE][Settings::ele][i_pt] << endl;
 	}
 	
 }

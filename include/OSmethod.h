@@ -23,6 +23,7 @@
 #include "TMultiGraph.h"
 #include "TROOT.h"
 #include "TSystem.h"
+#include "TLorentzVector.h"
 
 // Include classes
 #include "Tree.h"

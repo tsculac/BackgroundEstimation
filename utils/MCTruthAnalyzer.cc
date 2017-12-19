@@ -56,28 +56,25 @@ TLegend* BuildLegend(TGraphErrors *conv, TGraphErrors *lep, TGraphErrors *nomatc
 	return leg;
 }
 
-int matchFlavour(int MatchJetPartonFlavour, int GenMCTruthMatchId, int GenMCTruthMatchMotherId)
+int matchFlavour(int MatchJetPartonFlavour, float dR_lep_RecoJet, int GenMCTruthMatchId, int GenMCTruthMatchMotherId)
 {
 	int flavour = 0;
 	
 	
 	//no match to jets but match to photon
-	if ( MatchJetPartonFlavour == 0 && (fabs(GenMCTruthMatchId) == 22 ||  fabs(GenMCTruthMatchMotherId) == 22) ) flavour = LeptonFlavours::Conversion;
+	if ( (MatchJetPartonFlavour == 0 || fabs(dR_lep_RecoJet) > 0.3) && (fabs(GenMCTruthMatchId) == 22 ||  fabs(GenMCTruthMatchMotherId) == 22) ) flavour = LeptonFlavours::Conversion;
 	
 	//no match to jets but match to lepton
-	else if ( MatchJetPartonFlavour == 0 && (fabs(GenMCTruthMatchId) == 11 ||  fabs(GenMCTruthMatchId) == 13) ) flavour = LeptonFlavours::Lepton;
+	else if ( (MatchJetPartonFlavour == 0 || fabs(dR_lep_RecoJet) > 0.3) && (fabs(GenMCTruthMatchId) == 11 ||  fabs(GenMCTruthMatchId) == 13) ) flavour = LeptonFlavours::Lepton;
 	
 	//no match to jets
-	else if ( MatchJetPartonFlavour == 0 ) flavour = LeptonFlavours::NoMatch;
+	else if ( MatchJetPartonFlavour == 0 || fabs(dR_lep_RecoJet) > 0.3) flavour = LeptonFlavours::NoMatch;
 	
 	//match to light (u,d,s & g) jets
-	else if ( fabs(MatchJetPartonFlavour) == 1 || fabs(MatchJetPartonFlavour) == 2 || fabs(MatchJetPartonFlavour) == 3 || fabs(MatchJetPartonFlavour) == 21) flavour = LeptonFlavours::LightJet;
+	else if ( fabs(dR_lep_RecoJet)<=0.3 && (fabs(MatchJetPartonFlavour) == 1 || fabs(MatchJetPartonFlavour) == 2 || fabs(MatchJetPartonFlavour) == 3 || fabs(MatchJetPartonFlavour) == 21) ) flavour = LeptonFlavours::LightJet;
 	
 	//match to heavy jets (c & b)
-	else if ( fabs(MatchJetPartonFlavour) == 4 || fabs(MatchJetPartonFlavour) == 5 ) flavour = LeptonFlavours::HeavyJet;
-	
-	//match to gluon jets
-	//else if ( fabs(MatchJetPartonFlavour) == 21 ) flavour = LeptonFlavours::GluonJet;
+	else if ( fabs(dR_lep_RecoJet)<=0.3 && (fabs(MatchJetPartonFlavour) == 4 || fabs(MatchJetPartonFlavour) == 5 ) ) flavour = LeptonFlavours::HeavyJet;
 	
 	return flavour;
 }
@@ -176,6 +173,7 @@ void LoopCRZL(TString input_file_name)
 	vector<float>   *JetSigma = 0;
 	vector<short>   *MatchJetPartonFlavour = 0;
 	vector<float>   *MatchJetbTagger = 0;
+	vector<float>   *dR_lep_RecoJet = 0;
 	Float_t         genHEPMCweight;
 	Float_t         PUWeight;
 	Float_t         dataMCWeight;
@@ -213,6 +211,7 @@ void LoopCRZL(TString input_file_name)
 	_Tree->SetBranchAddress("JetSigma",&JetSigma);
 	_Tree->SetBranchAddress("MatchJetPartonFlavour",&MatchJetPartonFlavour);
 	_Tree->SetBranchAddress("MatchJetbTagger",&MatchJetbTagger);
+	_Tree->SetBranchAddress("dR_lep_RecoJet",&dR_lep_RecoJet);
 	_Tree->SetBranchAddress("genHEPMCweight",&genHEPMCweight);
 	_Tree->SetBranchAddress("PUWeight",&PUWeight);
 	_Tree->SetBranchAddress("dataMCWeight",&dataMCWeight);
@@ -240,7 +239,7 @@ void LoopCRZL(TString input_file_name)
 		_Tree->GetEvent(i_event);
 		
 		//Determine lepton origin
-		jet_category = matchFlavour(MatchJetPartonFlavour->at(2), GenMCTruthMatchId->at(2), GenMCTruthMatchMotherId->at(2));
+		jet_category = matchFlavour(MatchJetPartonFlavour->at(2), dR_lep_RecoJet->at(2), GenMCTruthMatchId->at(2), GenMCTruthMatchMotherId->at(2));
 		lep_flavour = (fabs(LepLepId->at(2)) == 11) ? 0 : 1;
 		if(lep_flavour == 0 && (abs(LepEta->at(2)) < 1.479) )  lep_EBorEE = 0;
 		if(lep_flavour == 0 && (abs(LepEta->at(2)) >= 1.479) ) lep_EBorEE = 1;
@@ -324,13 +323,13 @@ void MCTruthAnalyzer()
 	_s_MatchFlavour.push_back("LightJet");
 	_s_MatchFlavour.push_back("HeavyJet");
 	
-	TString path = "NewMC/";
+	TString path = "ImprovedMatching_MC/";
 	TString file_name = "/ZZ4lAnalysis.root";
 	
 	TString DY       = path + "DYJetsToLL_M50"     + file_name;
 	TString TTJets   = path + "TTJets_DiLept_ext1" + file_name;
 	TString WZTo3LNu = path + "WZTo3LNu"           + file_name;
-
+	
 	for (int i_jf = 0; i_jf < LeptonFlavours::NUM_OF_FLAVOURS; i_jf++)
 	{
 		histo_name = "Passing_ele_" + _s_MatchFlavour.at(i_jf);
@@ -345,15 +344,15 @@ void MCTruthAnalyzer()
 	}
 	
 	LoopCRZL(DY);
-//	LoopCRZL(TTJets);
-//	LoopCRZL(WZTo3LNu);
+	//	LoopCRZL(TTJets);
+	//	LoopCRZL(WZTo3LNu);
 	
-	TFile* fOutHistos = new TFile("output.root", "recreate");
+	TFile* fOutHistos = new TFile("output_DYttbar.root", "recreate");
 	fOutHistos->cd();
 	
 	TGraphErrors *fr_ele_EB[LeptonFlavours::NUM_OF_FLAVOURS],*fr_ele_EE[LeptonFlavours::NUM_OF_FLAVOURS];
 	TGraphErrors *fr_mu_EB[LeptonFlavours::NUM_OF_FLAVOURS],*fr_mu_EE[LeptonFlavours::NUM_OF_FLAVOURS];
-
+	
 	TH2F *passingTOT = new TH2F("passingTOT","", 80, 0, 80, 2, 0, 2);
 	TH2F *faillingTOT = new TH2F("failingTOT","", 80, 0, 80, 2, 0, 2);
 	TString fr_name;
@@ -560,7 +559,7 @@ void MCTruthAnalyzer()
 	
 	
 	
-
+	
 	fOutHistos->Close();
 	delete fOutHistos;
 	

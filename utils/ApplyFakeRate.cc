@@ -40,28 +40,25 @@ int n_events[LeptonFlavours::NUM_OF_FLAVOURS][2][2];
 vector <TString> _s_CR, _s_LepFlav, _s_EEorEB, _s_MatchFlavour;
 
 
-int matchFlavour(int MatchJetPartonFlavour, int GenMCTruthMatchId, int GenMCTruthMatchMotherId)
+int matchFlavour(int MatchJetPartonFlavour, float dR_lep_RecoJet, int GenMCTruthMatchId, int GenMCTruthMatchMotherId)
 {
 	int flavour = 0;
 	
 	
 	//no match to jets but match to photon
-	if ( MatchJetPartonFlavour == 0 && (fabs(GenMCTruthMatchId) == 22 ||  fabs(GenMCTruthMatchMotherId) == 22) ) flavour = LeptonFlavours::Conversion;
+	if ( (MatchJetPartonFlavour == 0 || fabs(dR_lep_RecoJet) > 0.3) && (fabs(GenMCTruthMatchId) == 22 ||  fabs(GenMCTruthMatchMotherId) == 22) ) flavour = LeptonFlavours::Conversion;
 	
 	//no match to jets but match to lepton
-	else if ( MatchJetPartonFlavour == 0 && (fabs(GenMCTruthMatchId) == 11 ||  fabs(GenMCTruthMatchId) == 13) ) flavour = LeptonFlavours::Lepton;
+	else if ( (MatchJetPartonFlavour == 0 || fabs(dR_lep_RecoJet) > 0.3) && (fabs(GenMCTruthMatchId) == 11 ||  fabs(GenMCTruthMatchId) == 13) ) flavour = LeptonFlavours::Lepton;
 	
 	//no match to jets
-	else if ( MatchJetPartonFlavour == 0 ) flavour = LeptonFlavours::NoMatch;
+	else if ( MatchJetPartonFlavour == 0 || fabs(dR_lep_RecoJet) > 0.3) flavour = LeptonFlavours::NoMatch;
 	
 	//match to light (u,d,s & g) jets
-	else if ( fabs(MatchJetPartonFlavour) == 1 || fabs(MatchJetPartonFlavour) == 2 || fabs(MatchJetPartonFlavour) == 3 || fabs(MatchJetPartonFlavour) == 21) flavour = LeptonFlavours::LightJet;
+	else if ( fabs(dR_lep_RecoJet)<=0.3 && (fabs(MatchJetPartonFlavour) == 1 || fabs(MatchJetPartonFlavour) == 2 || fabs(MatchJetPartonFlavour) == 3 || fabs(MatchJetPartonFlavour) == 21) ) flavour = LeptonFlavours::LightJet;
 	
 	//match to heavy jets (c & b)
-	else if ( fabs(MatchJetPartonFlavour) == 4 || fabs(MatchJetPartonFlavour) == 5 ) flavour = LeptonFlavours::HeavyJet;
-	
-	//match to gluon jets
-	//else if ( fabs(MatchJetPartonFlavour) == 21 ) flavour = LeptonFlavours::GluonJet;
+	else if ( fabs(dR_lep_RecoJet)<=0.3 && (fabs(MatchJetPartonFlavour) == 4 || fabs(MatchJetPartonFlavour) == 5 ) ) flavour = LeptonFlavours::HeavyJet;
 	
 	return flavour;
 }
@@ -158,7 +155,7 @@ void fillZXHisto_WithFlavourInfo(TString input_file_name, float lumi, TH1F* m4l_
 	_fs_ROS_SS.push_back(1.);//2e2mu
 	_fs_ROS_SS.push_back(1.);//2mu2e
 	
-	TFile *fr_file = TFile::Open("output.root");
+	TFile *fr_file = TFile::Open("output_DY.root");
 
 	TString fr_name;
 	
@@ -215,6 +212,7 @@ void fillZXHisto_WithFlavourInfo(TString input_file_name, float lumi, TH1F* m4l_
 	vector<float>   *JetSigma = 0;
 	vector<short>   *MatchJetPartonFlavour = 0;
 	vector<float>   *MatchJetbTagger = 0;
+	vector<float>   *dR_lep_RecoJet = 0;
 	Float_t         genHEPMCweight;
 	Float_t         PUWeight;
 	Float_t         dataMCWeight;
@@ -255,6 +253,7 @@ void fillZXHisto_WithFlavourInfo(TString input_file_name, float lumi, TH1F* m4l_
 	_Tree->SetBranchAddress("JetSigma",&JetSigma);
 	_Tree->SetBranchAddress("MatchJetPartonFlavour",&MatchJetPartonFlavour);
 	_Tree->SetBranchAddress("MatchJetbTagger",&MatchJetbTagger);
+	_Tree->SetBranchAddress("dR_lep_RecoJet",&dR_lep_RecoJet);
 	_Tree->SetBranchAddress("genHEPMCweight",&genHEPMCweight);
 	_Tree->SetBranchAddress("PUWeight",&PUWeight);
 	_Tree->SetBranchAddress("dataMCWeight",&dataMCWeight);
@@ -290,10 +289,11 @@ void fillZXHisto_WithFlavourInfo(TString input_file_name, float lumi, TH1F* m4l_
 		if(abs(Z1Flav) == 169 && abs(Z2Flav) == 121) _current_final_state = 3;
 		
 		//Determine lepton origin
-		jet1_category = matchFlavour(MatchJetPartonFlavour->at(2), GenMCTruthMatchId->at(2), GenMCTruthMatchMotherId->at(2));
-		jet2_category = matchFlavour(MatchJetPartonFlavour->at(3), GenMCTruthMatchId->at(3), GenMCTruthMatchMotherId->at(3));
+		jet1_category = matchFlavour(MatchJetPartonFlavour->at(2), dR_lep_RecoJet->at(2), GenMCTruthMatchId->at(2), GenMCTruthMatchMotherId->at(2));
+		jet2_category = matchFlavour(MatchJetPartonFlavour->at(3), dR_lep_RecoJet->at(3), GenMCTruthMatchId->at(3), GenMCTruthMatchMotherId->at(3));
 		
 		_event_weight = (lumi * 1000 * xsec * overallEventWeight) / gen_sum_weights;
+		if (_current_proces == 0) _event_weight*=0.33;
 		
 		// Calculate yield
 		_yield_SR = _fs_ROS_SS.at(_current_final_state)*GetFakeRate_WithFlavour(LepPt->at(2),LepEta->at(2),LepLepId->at(2),jet1_category)*GetFakeRate_WithFlavour(LepPt->at(3),LepEta->at(3),LepLepId->at(3),jet2_category);
@@ -386,6 +386,7 @@ void fillZXHisto(bool corrected, TString input_file_name, float lumi, TH1F* m4l_
 	vector<float>   *JetSigma = 0;
 	vector<short>   *MatchJetPartonFlavour = 0;
 	vector<float>   *MatchJetbTagger = 0;
+	vector<float>   *dR_lep_RecoJet = 0;
 	Float_t         genHEPMCweight;
 	Float_t         PUWeight;
 	Float_t         dataMCWeight;
@@ -426,6 +427,7 @@ void fillZXHisto(bool corrected, TString input_file_name, float lumi, TH1F* m4l_
 	_Tree->SetBranchAddress("JetSigma",&JetSigma);
 	_Tree->SetBranchAddress("MatchJetPartonFlavour",&MatchJetPartonFlavour);
 	_Tree->SetBranchAddress("MatchJetbTagger",&MatchJetbTagger);
+	_Tree->SetBranchAddress("dR_lep_RecoJet",&dR_lep_RecoJet);
 	_Tree->SetBranchAddress("genHEPMCweight",&genHEPMCweight);
 	_Tree->SetBranchAddress("PUWeight",&PUWeight);
 	_Tree->SetBranchAddress("dataMCWeight",&dataMCWeight);
@@ -458,6 +460,7 @@ void fillZXHisto(bool corrected, TString input_file_name, float lumi, TH1F* m4l_
 		if(abs(Z1Flav) == 169 && abs(Z2Flav) == 121) _current_final_state = 3;
 		
 		_event_weight = (lumi * 1000 * xsec * overallEventWeight) / gen_sum_weights;
+		if (_current_proces == 0) _event_weight*=0.33;
 		
 		// Calculate yield
 		_yield_SR = _fs_ROS_SS.at(_current_final_state)*GetFakeRate(LepPt->at(2),LepEta->at(2),LepLepId->at(2))*GetFakeRate(LepPt->at(3),LepEta->at(3),LepLepId->at(3));
@@ -510,6 +513,7 @@ void fillZXHisto_CutBased(TString input_file_name, float lumi, TH1F* m4l_ZX[3][4
 	vector<float>   *JetSigma = 0;
 	vector<short>   *MatchJetPartonFlavour = 0;
 	vector<float>   *MatchJetbTagger = 0;
+	vector<float>   *dR_lep_RecoJet = 0;
 	Float_t         genHEPMCweight;
 	Float_t         PUWeight;
 	Float_t         dataMCWeight;
@@ -550,6 +554,7 @@ void fillZXHisto_CutBased(TString input_file_name, float lumi, TH1F* m4l_ZX[3][4
 	_Tree->SetBranchAddress("JetSigma",&JetSigma);
 	_Tree->SetBranchAddress("MatchJetPartonFlavour",&MatchJetPartonFlavour);
 	_Tree->SetBranchAddress("MatchJetbTagger",&MatchJetbTagger);
+	_Tree->SetBranchAddress("dR_lep_RecoJet",&dR_lep_RecoJet);
 	_Tree->SetBranchAddress("genHEPMCweight",&genHEPMCweight);
 	_Tree->SetBranchAddress("PUWeight",&PUWeight);
 	_Tree->SetBranchAddress("dataMCWeight",&dataMCWeight);
@@ -582,6 +587,7 @@ void fillZXHisto_CutBased(TString input_file_name, float lumi, TH1F* m4l_ZX[3][4
 		if(abs(Z1Flav) == 169 && abs(Z2Flav) == 121) _current_final_state = 3;
 		
 		_event_weight = (lumi * 1000 * xsec * overallEventWeight) / gen_sum_weights;
+		if (_current_proces == 0) _event_weight*=0.33;
 		
 		//if (matchFlavour(MatchJetPartonFlavour->at(2), GenMCTruthMatchId->at(2), GenMCTruthMatchMotherId->at(2)) == LeptonFlavours::Conversion || matchFlavour(MatchJetPartonFlavour->at(3), GenMCTruthMatchId->at(3), GenMCTruthMatchMotherId->at(3)) == LeptonFlavours::Conversion) continue;
 		// Calculate yield
@@ -730,47 +736,157 @@ void ApplyFakeRate()
 	float lumi = 35.9;
 	
 	TString path = "NewMC/";
+	TString path_ext = "ImprovedMatching_MC/";
 	TString file_name = "/ZZ4lAnalysis.root";
 	
 	TString DY       = path + "DYJetsToLL_M50" + file_name;
 	TString TTJets   = path + "TTJets_DiLept_ext1" + file_name;
 	TString WZTo3LNu = path + "WZTo3LNu" + file_name;
 	
-	TH1F* m4l_ZX[3][4];
-	m4l_ZX[0][0] = new TH1F("m4l_ZX_DY_4mu","m4l_ZX_4mu",40,70.,870.);
-	m4l_ZX[0][1] = new TH1F("m4l_ZX_DY_4e","m4l_ZX_4e",40,70.,870.);
-	m4l_ZX[0][2] = new TH1F("m4l_ZX_DY_2e2mu","m4l_ZX_2e2mu",40,70.,870.);
-	m4l_ZX[0][3] = new TH1F("m4l_ZX_DY_2mu2e","m4l_ZX_2mu2e",40,70.,870.);
-	m4l_ZX[1][0] = new TH1F("m4l_ZX_TT_4mu","m4l_ZX_4mu",40,70.,870.);
-	m4l_ZX[1][1] = new TH1F("m4l_ZX_TT_4e","m4l_ZX_4e",40,70.,870.);
-	m4l_ZX[1][2] = new TH1F("m4l_ZX_TT_2e2mu","m4l_ZX_2e2mu",40,70.,870.);
-	m4l_ZX[1][3] = new TH1F("m4l_ZX_TT_2mu2e","m4l_ZX_2mu2e",40,70.,870.);
-	m4l_ZX[2][0] = new TH1F("m4l_ZX_WZ_4mu","m4l_ZX_4mu",40,70.,870.);
-	m4l_ZX[2][1] = new TH1F("m4l_ZX_WZ_4e","m4l_ZX_4e",40,70.,870.);
-	m4l_ZX[2][2] = new TH1F("m4l_ZX_WZ_2e2mu","m4l_ZX_2e2mu",40,70.,870.);
-	m4l_ZX[2][3] = new TH1F("m4l_ZX_WZ_2mu2e","m4l_ZX_2mu2e",40,70.,870.);
+	TString DY_mix = path_ext + "DYJetsToLL_M50" + file_name;
+	TString DY_0j  = path_ext + "DYToLL_0J" + file_name;
+	TString DY_0jb = path_ext + "DYToLL_0J_backup" + file_name;
+	TString DY_1j  = path_ext + "DYToLL_1J" + file_name;
+	TString DY_1jb = path_ext + "DYToLL_1J_backup" + file_name;
+	TString DY_2j  = path_ext + "DYToLL_2J" + file_name;
+	TString DY_2jb = path_ext + "DYToLL_2J_backup" + file_name;
 	
-	fillZXHisto_WithFlavourInfo(DY, lumi, m4l_ZX);
+	TH1F* m4l_ZX[3][4];
+	int n_bins = 20;
+	m4l_ZX[0][0] = new TH1F("m4l_ZX_DY_4mu","m4l_ZX_4mu",n_bins,70.,870.);
+	m4l_ZX[0][1] = new TH1F("m4l_ZX_DY_4e","m4l_ZX_4e",n_bins,70.,870.);
+	m4l_ZX[0][2] = new TH1F("m4l_ZX_DY_2e2mu","m4l_ZX_2e2mu",n_bins,70.,870.);
+	m4l_ZX[0][3] = new TH1F("m4l_ZX_DY_2mu2e","m4l_ZX_2mu2e",n_bins,70.,870.);
+	m4l_ZX[1][0] = new TH1F("m4l_ZX_TT_4mu","m4l_ZX_4mu",n_bins,70.,870.);
+	m4l_ZX[1][1] = new TH1F("m4l_ZX_TT_4e","m4l_ZX_4e",n_bins,70.,870.);
+	m4l_ZX[1][2] = new TH1F("m4l_ZX_TT_2e2mu","m4l_ZX_2e2mu",n_bins,70.,870.);
+	m4l_ZX[1][3] = new TH1F("m4l_ZX_TT_2mu2e","m4l_ZX_2mu2e",n_bins,70.,870.);
+	m4l_ZX[2][0] = new TH1F("m4l_ZX_WZ_4mu","m4l_ZX_4mu",n_bins,70.,870.);
+	m4l_ZX[2][1] = new TH1F("m4l_ZX_WZ_4e","m4l_ZX_4e",n_bins,70.,870.);
+	m4l_ZX[2][2] = new TH1F("m4l_ZX_WZ_2e2mu","m4l_ZX_2e2mu",n_bins,70.,870.);
+	m4l_ZX[2][3] = new TH1F("m4l_ZX_WZ_2mu2e","m4l_ZX_2mu2e",n_bins,70.,870.);
+	
+	TH1F *m4l_4e_cutBased,*m4l_4e_Flav,*m4l_4e_avgUnc,*m4l_4e_avg;
+	TH1F *m4l_4mu_cutBased,*m4l_4mu_Flav,*m4l_4mu_avgUnc,*m4l_4mu_avg;
+	
+	m4l_4e_cutBased = new TH1F("m4l_ZX_DY_4e_cutBased","m4l_ZX_4e",n_bins,70.,870.);
+	m4l_4e_Flav     = new TH1F("m4l_ZX_DY_4e_Flav","m4l_ZX_4e",n_bins,70.,870.);
+	m4l_4e_avgUnc   = new TH1F("m4l_ZX_DY_4e_avgUnc","m4l_ZX_4e",n_bins,70.,870.);
+	m4l_4e_avg      = new TH1F("m4l_ZX_DY_4e_avg","m4l_ZX_4e",n_bins,70.,870.);
+	
+	m4l_4mu_cutBased = new TH1F("m4l_ZX_DY_4mu_cutBased","m4l_ZX_4e",n_bins,70.,870.);
+	m4l_4mu_Flav     = new TH1F("m4l_ZX_DY_4mu_Flav","m4l_ZX_4e",n_bins,70.,870.);
+	m4l_4mu_avgUnc   = new TH1F("m4l_ZX_DY_4mu_avgUnc","m4l_ZX_4e",n_bins,70.,870.);
+	m4l_4mu_avg      = new TH1F("m4l_ZX_DY_4mu_avg","m4l_ZX_4e",n_bins,70.,870.);
+	
+	
+	fillZXHisto_WithFlavourInfo(DY_mix, lumi, m4l_ZX);
+	fillZXHisto_WithFlavourInfo(DY_0j, lumi, m4l_ZX);
+	fillZXHisto_WithFlavourInfo(DY_0jb, lumi, m4l_ZX);
+	fillZXHisto_WithFlavourInfo(DY_1j, lumi, m4l_ZX);
+	fillZXHisto_WithFlavourInfo(DY_1jb, lumi, m4l_ZX);
+	fillZXHisto_WithFlavourInfo(DY_2j, lumi, m4l_ZX);
+	fillZXHisto_WithFlavourInfo(DY_2jb, lumi, m4l_ZX);
 	//fillZXHisto_WithFlavourInfo(TTJets, lumi, m4l_ZX);
 	//fillZXHisto_WithFlavourInfo(WZTo3LNu, lumi, m4l_ZX);
 	DrawHistos(m4l_ZX, "FlavourInfo");
+	m4l_4e_Flav = (TH1F*)m4l_ZX[0][1]->Clone();
+	m4l_4e_Flav->Add(m4l_ZX[1][1]);
+	m4l_4mu_Flav = (TH1F*)m4l_ZX[0][0]->Clone();
+	m4l_4mu_Flav->Add(m4l_ZX[1][0]);
 	ResetHistos(m4l_ZX);
 	
-	fillZXHisto(true, DY, lumi, m4l_ZX);
+	fillZXHisto(true, DY_mix, lumi, m4l_ZX);
+	fillZXHisto(true, DY_0j, lumi, m4l_ZX);
+	fillZXHisto(true, DY_0jb, lumi, m4l_ZX);
+	fillZXHisto(true, DY_1j, lumi, m4l_ZX);
+	fillZXHisto(true, DY_1jb, lumi, m4l_ZX);
+	fillZXHisto(true, DY_2j, lumi, m4l_ZX);
+	fillZXHisto(true, DY_2jb, lumi, m4l_ZX);
 	//fillZXHisto(true, TTJets, lumi, m4l_ZX);
 	//fillZXHisto(true, WZTo3LNu, lumi, m4l_ZX);
 	DrawHistos(m4l_ZX, "Average_ConversionCorrected");
+	m4l_4e_avg = (TH1F*)m4l_ZX[0][1]->Clone();
+	m4l_4e_avg->Add(m4l_ZX[1][1]);
+	m4l_4mu_avg = (TH1F*)m4l_ZX[0][0]->Clone();
+	m4l_4mu_avg->Add(m4l_ZX[1][0]);
 	ResetHistos(m4l_ZX);
 	
-	fillZXHisto(false, DY, lumi, m4l_ZX);
+	fillZXHisto(false, DY_mix, lumi, m4l_ZX);
+	fillZXHisto(false, DY_0j, lumi, m4l_ZX);
+	fillZXHisto(false, DY_0jb, lumi, m4l_ZX);
+	fillZXHisto(false, DY_1j, lumi, m4l_ZX);
+	fillZXHisto(false, DY_1jb, lumi, m4l_ZX);
+	fillZXHisto(false, DY_2j, lumi, m4l_ZX);
+	fillZXHisto(false, DY_2jb, lumi, m4l_ZX);
 	//fillZXHisto(false, TTJets, lumi, m4l_ZX);
 	//fillZXHisto(false, WZTo3LNu, lumi, m4l_ZX);
 	DrawHistos(m4l_ZX, "Average_UnCorrected");
+	m4l_4e_avgUnc = (TH1F*)m4l_ZX[0][1]->Clone();
+	m4l_4e_avgUnc->Add(m4l_ZX[1][1]);
+	m4l_4mu_avgUnc = (TH1F*)m4l_ZX[0][0]->Clone();
+	m4l_4mu_avgUnc->Add(m4l_ZX[1][0]);
 	ResetHistos(m4l_ZX);
 	
-	fillZXHisto_CutBased(DY, lumi, m4l_ZX);
+	fillZXHisto_CutBased(DY_mix, lumi, m4l_ZX);
+	fillZXHisto_CutBased(DY_0j, lumi, m4l_ZX);
+	fillZXHisto_CutBased(DY_0jb, lumi, m4l_ZX);
+	fillZXHisto_CutBased(DY_1j, lumi, m4l_ZX);
+	fillZXHisto_CutBased(DY_1jb, lumi, m4l_ZX);
+	fillZXHisto_CutBased(DY_2j, lumi, m4l_ZX);
+	fillZXHisto_CutBased(DY_2jb, lumi, m4l_ZX);
 	//fillZXHisto_CutBased(TTJets, lumi, m4l_ZX);
 	//fillZXHisto_CutBased(WZTo3LNu, lumi, m4l_ZX);
 	DrawHistos(m4l_ZX, "CutBased");
+	m4l_4e_cutBased = (TH1F*)m4l_ZX[0][1]->Clone();
+	m4l_4e_cutBased->Add(m4l_ZX[1][1]);
+	m4l_4mu_cutBased = (TH1F*)m4l_ZX[0][0]->Clone();
+	m4l_4mu_cutBased->Add(m4l_ZX[1][0]);
 	ResetHistos(m4l_ZX);
+	
+	TCanvas *c = new TCanvas("c","c",900,900);
+	c->cd();
+	m4l_4e_avgUnc->SetLineColor(kBlack);
+	m4l_4e_avgUnc->SetLineWidth(3);
+	m4l_4e_avgUnc->SetLineStyle(2);
+	m4l_4e_avgUnc->SetFillColorAlpha(kWhite, 0.0);
+	m4l_4e_avgUnc->Draw("HIST");
+	m4l_4e_cutBased->SetLineColor(kGreen-1);
+	m4l_4e_cutBased->SetLineWidth(3);
+	m4l_4e_cutBased->SetFillColorAlpha(kWhite, 0.0);
+	m4l_4e_cutBased->Draw("HIST SAME");
+	m4l_4e_avg->SetLineColor(kBlack);
+	m4l_4e_avg->SetLineWidth(3);
+	m4l_4e_avg->SetFillColorAlpha(kWhite, 0.0);
+	m4l_4e_avg->Draw("HIST SAME");
+	m4l_4e_Flav->SetLineColor(kBlue);
+	m4l_4e_Flav->SetLineWidth(3);
+	m4l_4e_Flav->SetFillColorAlpha(kWhite, 0.0);
+	m4l_4e_Flav->Draw("HIST SAME");
+	
+	c->SaveAs("./MCTruthStudy/ZX_CompareMethods_4e.pdf");
+	c->SaveAs("./MCTruthStudy/ZX_CompareMethods_4e.png");
+	
+	c->Clear();
+	m4l_4mu_avgUnc->SetLineColor(kBlack);
+	m4l_4mu_avgUnc->SetLineWidth(3);
+	m4l_4mu_avgUnc->SetLineStyle(2);
+	m4l_4mu_avgUnc->SetFillColorAlpha(kWhite, 0.0);
+	m4l_4mu_avgUnc->Draw("HIST");
+	m4l_4mu_cutBased->SetLineColor(kGreen-1);
+	m4l_4mu_cutBased->SetLineWidth(3);
+	m4l_4mu_cutBased->SetFillColorAlpha(kWhite, 0.0);
+	m4l_4mu_cutBased->Draw("HIST SAME");
+	m4l_4mu_avg->SetLineColor(kBlack);
+	m4l_4mu_avg->SetLineWidth(3);
+	m4l_4mu_avg->SetFillColorAlpha(kWhite, 0.0);
+	m4l_4mu_avg->Draw("HIST SAME");
+	m4l_4mu_Flav->SetLineColor(kBlue);
+	m4l_4mu_Flav->SetLineWidth(3);
+	m4l_4mu_Flav->SetFillColorAlpha(kWhite, 0.0);
+	m4l_4mu_Flav->Draw("HIST SAME");
+	
+	c->SaveAs("./MCTruthStudy/ZX_CompareMethods_4mu.pdf");
+	c->SaveAs("./MCTruthStudy/ZX_CompareMethods_4mu.png");
+	
 }

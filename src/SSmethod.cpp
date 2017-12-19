@@ -429,6 +429,7 @@ void SSmethod::MakeHistogramsZX( TString input_file_data_name, TString  input_fi
       
       if ( !CRflag ) continue;
       if ( !test_bit(CRflag, CRZLLss) ) continue;
+		if ( ZZMass < 70. ) continue;
       
       _current_final_state = FindFinalState();
       
@@ -455,9 +456,10 @@ void SSmethod::MakeHistogramsZX( TString input_file_data_name, TString  input_fi
       _yield_SR = _fs_ROS_SS.at(_current_final_state)*FR->GetFakeRate(LepPt->at(2),LepEta->at(2),LepLepId->at(2))*FR->GetFakeRate(LepPt->at(3),LepEta->at(3),LepLepId->at(3));
       
       
-      _expected_yield_SR[_current_final_state][_current_category] += _yield_SR; // this number needs to be used when renormalizing histograms that have some cut/blinding
+      _expected_yield_SR[_current_final_state][_current_category] += _yield_SR;
       _number_of_events_CR[_current_final_state][_current_category]++;
       //cout << _current_process << " " <<  _current_final_state << " " << _current_category << endl;
+		
       // Fill m4l Z+X histograms
       histos_ZX[Settings::regZLL][_current_process][_current_final_state][_current_category]->Fill(ZZMass,(_current_process == Settings::Data) ? _yield_SR :  _yield_SR*_event_weight);
       
@@ -1103,7 +1105,7 @@ void SSmethod::Calculate_FR_nMissingHits( TString input_file_data_name, TGraphEr
 			for ( int i_ZMass = 0; i_ZMass < num_of_z_mass_windows; i_ZMass++ )
 			{
 				vector_x[i_eta][i_pt].push_back(_N_MissingHits[i_ZMass][i_eta][i_pt]/(_N_Passing[i_ZMass][i_eta][i_pt] + _N_Failling[i_ZMass][i_eta][i_pt]));
-				vector_ex[i_eta][i_pt].push_back(sqrt(pow((1./pow(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt],2)),2)*_N_MissingHits[i_ZMass][i_eta][i_pt] + pow((_N_MissingHits[i_ZMass][i_eta][i_pt]/pow(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt],2)),2)*(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt])));
+				vector_ex[i_eta][i_pt].push_back(sqrt(pow((1./pow(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt],1)),2)*_N_MissingHits[i_ZMass][i_eta][i_pt] + pow((_N_MissingHits[i_ZMass][i_eta][i_pt]/pow(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt],2)),2)*(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt])));
 				
 				vector_y[i_eta][i_pt].push_back(_N_Passing[i_ZMass][i_eta][i_pt]/(_N_Passing[i_ZMass][i_eta][i_pt] + _N_Failling[i_ZMass][i_eta][i_pt]));
 				vector_ey[i_eta][i_pt].push_back(sqrt(pow((_N_Failling[i_ZMass][i_eta][i_pt]/pow(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt],2)),2)*_N_Passing[i_ZMass][i_eta][i_pt] + pow((_N_Passing[i_ZMass][i_eta][i_pt]/pow(_N_Failling[i_ZMass][i_eta][i_pt]+_N_Passing[i_ZMass][i_eta][i_pt],2)),2)*_N_Failling[i_ZMass][i_eta][i_pt]));
@@ -1118,7 +1120,9 @@ void SSmethod::Calculate_FR_nMissingHits( TString input_file_data_name, TGraphEr
 //				cout << "NF = " << _N_Failling[i_ZMass][i_eta][i_pt] << endl;
 //				cout << "MH = " << _N_MissingHits[i_ZMass][i_eta][i_pt] << endl;
 //				cout << "avg_MH = " << vector_x[i_eta][i_pt][i_ZMass] << endl;
+//				cout << "avg_MH error = " << vector_ex[i_eta][i_pt][i_ZMass] << endl;
 //				cout << "FR = " << vector_y[i_eta][i_pt][i_ZMass] << endl;
+//				cout << "FR error = " << vector_ey[i_eta][i_pt][i_ZMass] << endl;
 			}
 		}
 		
@@ -1217,6 +1221,7 @@ void SSmethod::Correct_Final_FR( TString input_file_data_name)
 		if (!(test_bit(CRflag, CRZLLss))) continue;
 		
 		if ( abs(Z2Flav) != 121) continue; // only electrons
+		if ( abs(Z1Flav) != 121) continue; // only 4e
 //		if ( (LepPt->at(0) > LepPt->at(1)) && (LepPt->at(0) < 20. || LepPt->at(1) < 10.) ) continue;
 //		if ( (LepPt->at(1) > LepPt->at(0)) && (LepPt->at(1) < 20. || LepPt->at(0) < 10.) ) continue;
 		else
@@ -1242,7 +1247,7 @@ void SSmethod::Correct_Final_FR( TString input_file_data_name)
 	{
 		Float_t sigma_avgMH = 0;
 		_avg_MissingHits_ZLL[Settings::EB][i_pt] = _N_MissingHits_ZLL[Settings::EB][i_pt]/(_N_Passing_ZLL[Settings::EB][i_pt] + _N_Failling_ZLL[Settings::EB][i_pt]);
-		sigma_avgMH = sqrt(pow((1./pow(_N_Failling_ZLL[Settings::EB][i_pt]+_N_Passing_ZLL[Settings::EB][i_pt],2)),2)*_N_MissingHits_ZLL[Settings::EB][i_pt] + pow((_N_MissingHits_ZLL[Settings::EB][i_pt]/pow(_N_Failling_ZLL[Settings::EB][i_pt]+_N_Passing_ZLL[Settings::EB][i_pt],2)),2)*(_N_Failling_ZLL[Settings::EB][i_pt]+_N_Passing_ZLL[Settings::EB][i_pt]));
+		sigma_avgMH = sqrt(pow((1./pow(_N_Failling_ZLL[Settings::EB][i_pt]+_N_Passing_ZLL[Settings::EB][i_pt],1)),2)*_N_MissingHits_ZLL[Settings::EB][i_pt] + pow((_N_MissingHits_ZLL[Settings::EB][i_pt]/pow(_N_Failling_ZLL[Settings::EB][i_pt]+_N_Passing_ZLL[Settings::EB][i_pt],2)),2)*(_N_Failling_ZLL[Settings::EB][i_pt]+_N_Passing_ZLL[Settings::EB][i_pt]));
 		
 		vector_X[Settings::corrected][Settings::EB][Settings::ele][i_pt] = ((_pT_bins[i_pt + 1] + _pT_bins[i_pt + 2])/2);
 		vector_Y[Settings::corrected][Settings::EB][Settings::ele][i_pt] = (Ele_FR_correction_function[Settings::EB][i_pt]->Eval(_avg_MissingHits_ZLL[Settings::EB][i_pt]));
@@ -1252,7 +1257,7 @@ void SSmethod::Correct_Final_FR( TString input_file_data_name)
 		
 		
 		_avg_MissingHits_ZLL[Settings::EE][i_pt] = _N_MissingHits_ZLL[Settings::EE][i_pt]/(_N_Passing_ZLL[Settings::EE][i_pt] + _N_Failling_ZLL[Settings::EE][i_pt]);
-		sigma_avgMH = sqrt(pow((1./pow(_N_Failling_ZLL[Settings::EE][i_pt]+_N_Passing_ZLL[Settings::EE][i_pt],2)),2)*_N_MissingHits_ZLL[Settings::EE][i_pt] + pow((_N_MissingHits_ZLL[Settings::EE][i_pt]/pow(_N_Failling_ZLL[Settings::EE][i_pt]+_N_Passing_ZLL[Settings::EE][i_pt],2)),2)*(_N_Failling_ZLL[Settings::EE][i_pt]+_N_Passing_ZLL[Settings::EE][i_pt]));
+		sigma_avgMH = sqrt(pow((1./pow(_N_Failling_ZLL[Settings::EE][i_pt]+_N_Passing_ZLL[Settings::EE][i_pt],1)),2)*_N_MissingHits_ZLL[Settings::EE][i_pt] + pow((_N_MissingHits_ZLL[Settings::EE][i_pt]/pow(_N_Failling_ZLL[Settings::EE][i_pt]+_N_Passing_ZLL[Settings::EE][i_pt],2)),2)*(_N_Failling_ZLL[Settings::EE][i_pt]+_N_Passing_ZLL[Settings::EE][i_pt]));
 		
 		vector_X[Settings::corrected][Settings::EE][Settings::ele][i_pt] = ((_pT_bins[i_pt + 1] + _pT_bins[i_pt + 2])/2);
 		vector_Y[Settings::corrected][Settings::EE][Settings::ele][i_pt] = (Ele_FR_correction_function[Settings::EE][i_pt]->Eval(_avg_MissingHits_ZLL[Settings::EE][i_pt]));
@@ -1403,10 +1408,11 @@ void SSmethod::PlotDataMC( TString variable_name, TString folder )
          histos_1D[Settings::regZLL][Settings::Data][i_fs][i_cat]->SetLineColor(kBlack);
          
          THStack *stack = new THStack( "stack", "stack" );
-         stack->Add(histos_1D[Settings::regZLL][Settings::WZ][i_fs][i_cat]);
-         stack->Add(histos_1D[Settings::regZLL][Settings::qqZZ][i_fs][i_cat]);
+			stack->Add(histos_1D[Settings::regZLL][Settings::qqZZ][i_fs][i_cat]);
+			stack->Add(histos_1D[Settings::regZLL][Settings::WZ][i_fs][i_cat]);
+			stack->Add(histos_1D[Settings::regZLL][Settings::ttbar][i_fs][i_cat]);
          stack->Add(histos_1D[Settings::regZLL][Settings::DY][i_fs][i_cat]);
-         stack->Add(histos_1D[Settings::regZLL][Settings::ttbar][i_fs][i_cat]);
+			
          
          stack->Draw("HIST");
          

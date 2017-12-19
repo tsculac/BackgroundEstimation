@@ -57,7 +57,7 @@ int main( int argc, char *argv[] )
    os->FillFRHistos(Data);
    os->FillFRHistos(WZ);
    os->SaveFRHistos("Histos_OS.root", SubtractWZ, Remove_NegBins_FR);
-	
+
    ///////////////////////////////////
    // Calculate fake rates          //
    ///////////////////////////////////

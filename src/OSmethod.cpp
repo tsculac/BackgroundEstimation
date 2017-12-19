@@ -235,6 +235,8 @@ void OSmethod::MakeHistogramsZX( TString input_file_data_name, TString  input_fi
       
       if (!(test_bit(CRflag, CRZLLos_2P2F)) && !(test_bit(CRflag, CRZLLos_3P1F))) continue;
 		
+		if ( ZZMass < 70. ) continue;
+		
       _current_final_state = FindFinalState();
       
       for ( int j = 0; j < nCleanedJetsPt30; j++)
@@ -268,7 +270,7 @@ void OSmethod::MakeHistogramsZX( TString input_file_data_name, TString  input_fi
          if(LepisID->at(3) && LepCombRelIsoPF->at(3) < 0.35) _f4 = FR->GetFakeRate(LepPt->at(2),LepEta->at(2),LepLepId->at(2));
          else _f4 = FR->GetFakeRate(LepPt->at(3),LepEta->at(3),LepLepId->at(3));
          
-         h_from3P1F_SR[_current_final_state][_current_category]->Fill(ZZMass,_f4/(1-_f4) );
+         h_from3P1F_SR[_current_final_state][_current_category]->Fill(ZZMass, (_f4/(1-_f4)) );
       }
       
    }
@@ -581,17 +583,7 @@ void OSmethod::FillZXInclusive( bool remove_negative_bins )
          h_from3P1F_SR_ZZonly[Settings::fs4l][i_cat]    ->Add(h_from3P1F_SR_ZZonly[i_fs][i_cat]);
       }
    }
-
-   for (int i_fs = 0; i_fs < Settings::fs4l; i_fs++)
-   {
-      h_from2P2F_SR[Settings::fs4l][Settings::inclusive]->Add(h_from2P2F_SR[i_fs][Settings::inclusive]);
-      h_from2P2F_3P1F[Settings::fs4l][Settings::inclusive]->Add(h_from2P2F_3P1F[i_fs][Settings::inclusive]);
-      h_from3P1F_SR_final[Settings::fs4l][Settings::inclusive]->Add(h_from3P1F_SR_final[i_fs][Settings::inclusive]);
-      h_from3P1F_SR[Settings::fs4l][Settings::inclusive]->Add(h_from3P1F_SR[i_fs][Settings::inclusive]);
-      h_from3P1F_SR_ZZonly[Settings::fs4l][Settings::inclusive]->Add(h_from3P1F_SR_ZZonly[i_fs][Settings::inclusive]);
-      
-   }
-   
+	
    for (int i_fs = 0; i_fs <= Settings::fs4l; i_fs++)
    {
       for (int i_cat = 0; i_cat <= Settings::inclusive; i_cat++)
@@ -612,7 +604,17 @@ void OSmethod::FillZXInclusive( bool remove_negative_bins )
 			}
 		}
 	}
-   
+	
+	for (int i_fs = 0; i_fs < Settings::fs4l; i_fs++)
+	{
+		h_from2P2F_SR[Settings::fs4l][Settings::inclusive]->Add(h_from2P2F_SR[i_fs][Settings::inclusive]);
+		h_from2P2F_3P1F[Settings::fs4l][Settings::inclusive]->Add(h_from2P2F_3P1F[i_fs][Settings::inclusive]);
+		h_from3P1F_SR_final[Settings::fs4l][Settings::inclusive]->Add(h_from3P1F_SR_final[i_fs][Settings::inclusive]);
+		h_from3P1F_SR[Settings::fs4l][Settings::inclusive]->Add(h_from3P1F_SR[i_fs][Settings::inclusive]);
+		h_from3P1F_SR_ZZonly[Settings::fs4l][Settings::inclusive]->Add(h_from3P1F_SR_ZZonly[i_fs][Settings::inclusive]);
+		
+	}
+	
    for (int i_fs = 0; i_fs <= Settings::fs4l; i_fs++)
    {
       for (int i_cat = 0; i_cat <= Settings::inclusive; i_cat++)

@@ -66,7 +66,9 @@ public:
    void GetZXHistos( TString );
    void PlotDataMC_2P2F( TString, TString );
    void PlotDataMC_3P1F( TString, TString );
+   void PlotDataMC( TString, TString );
    void PlotZXContributions( TString );
+   void FitZX( TString );
    void ProduceFakeRates( TString );
    void Set_pT_binning( int, float* );
    void SetLumi( float );

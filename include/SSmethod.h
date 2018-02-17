@@ -69,6 +69,7 @@ public:
    void ProduceFakeRates( TString , TString input_file_data_name = "DONT_CORRECT");
    void PlotDataMC( TString , TString );
    void PlotZX( TString , TString );
+   void FitZX( TString , TString );
    void Calculate_SSOS_Ratio( TString, TString, bool );
    void Set_pT_binning( int, float* );
    void SetLumi( float );

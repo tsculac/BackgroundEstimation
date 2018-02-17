@@ -20,15 +20,14 @@ int main( int argc, char *argv[] )
    gROOT->ProcessLine(".L ./ext/setTDRStyle_cpp.so");
    gROOT->ProcessLine("setTDRStyle();");
    
-   TString path = "Moriond_2017/";
+   TString path = "/eos/user/t/tsculac/BigStuff/";
    TString file_name = "/ZZ4lAnalysis.root";
-   TString file_name_FR = "/FakeRate_SS_Moriond368.root";
    
-   TString Data    = path + "Data"       + file_name;
-   TString WZ      = path + "WZTo3LNu"   + file_name;
-   TString ZZ      = path + "ZZTo4l"     + file_name;
-   TString ttbar   = path + "TTJets"     + file_name;
-   TString DY      = path + "DYJetsToLL" + file_name;
+   TString Data    = path + "2017Production_Data_FinalJSON/AllData"       + file_name;
+   TString WZ      = "Moriond_2017/WZTo3LNu"   + file_name;
+   TString ZZ      = path + "2017Production_MC/ZZTo4l"     + file_name;
+   TString ttbar   = "Moriond_2017/TTJets"     + file_name;
+   TString DY      = path + "2017Production_MC/DYJetsToLL_M50" + file_name;
 	
    bool SubtractWZ = true;
    bool Remove_NegBins_FR = true;
@@ -39,7 +38,7 @@ int main( int argc, char *argv[] )
    
    OSmethod *os = new OSmethod();
 
-   os->SetLumi(35.9);
+   os->SetLumi(41.37);
 
    ///////////////////////////////////
    // Fill control histos           //
@@ -49,42 +48,44 @@ int main( int argc, char *argv[] )
    os->FillDataMCPlots(ZZ);
    os->FillDataMCPlots(ttbar);
    os->FillDataMCPlots(DY);
-   os->SaveDataMCHistos("DataMC_OS.root");
+   os->SaveDataMCHistos("DataMC_OS_Moriond18.root");
 
    ///////////////////////////////////
    // Fill passing/failling histos  //
    ///////////////////////////////////
    os->FillFRHistos(Data);
    os->FillFRHistos(WZ);
-   os->SaveFRHistos("Histos_OS.root", SubtractWZ, Remove_NegBins_FR);
+   os->SaveFRHistos("Histos_OS_Moriond18.root", SubtractWZ, Remove_NegBins_FR);
 
    ///////////////////////////////////
    // Calculate fake rates          //
    ///////////////////////////////////
-   os->GetFRHistos("Histos_OS.root");
+   os->GetFRHistos("Histos_OS_Moriond18.root");
    os->Set_pT_binning(8, pT_bins);
-   os->ProduceFakeRates("FakeRates_OS_Moriond17.root");
+   os->ProduceFakeRates("FakeRates_OS_Moriond18.root");
 
    ///////////////////////////////////
    // Fill ZX contributions histos  //
    ///////////////////////////////////
-   os->MakeHistogramsZX(Data, "FakeRates_OS_Moriond17.root");
-   os->MakeZXMCContribution(ZZ, "FakeRates_OS_Moriond17.root");
-   os->SaveZXHistos("ZXHistos_OS.root", Remove_NegBins_ZX);
+   os->MakeHistogramsZX(Data, "FakeRates_OS_Moriond18.root");
+   os->MakeZXMCContribution(ZZ, "FakeRates_OS_Moriond18.root");
+   os->SaveZXHistos("ZXHistos_OS_Moriond18.root", Remove_NegBins_ZX);
 
    ///////////////////////////////////
    // Plot control plots            //
    ///////////////////////////////////
-   os->GetZXHistos("ZXHistos_OS.root");
-   os->GetDataMCHistos("DataMC_OS.root");
+   os->GetZXHistos("ZXHistos_OS_Moriond18.root");
+   os->GetDataMCHistos("DataMC_OS_Moriond18.root");
+   os->PlotDataMC("M4l", "Plots");
    os->PlotDataMC_2P2F( "M4l", "Plots" );
    os->PlotDataMC_3P1F( "M4l", "Plots" );
 
    ///////////////////////////////////
    // Plot Z+X plots                //
    ///////////////////////////////////
-   os->GetZXHistos("ZXHistos_OS.root");
+   os->GetZXHistos("ZXHistos_OS_Moriond18.root");
    os->PlotZXContributions("Plots");
+   os->FitZX("Plots");
 	
    delete os;
 }

@@ -20,16 +20,14 @@ int main( int argc, char *argv[] )
    gROOT->ProcessLine(".L ./ext/setTDRStyle_cpp.so");
    gROOT->ProcessLine("setTDRStyle();");
    
-   TString path = "Moriond_2017/";
+   TString path = "/eos/user/t/tsculac/BigStuff/";
    TString file_name = "/ZZ4lAnalysis.root";
-   TString file_name_FR = "/FakeRate_SS_Moriond368.root";
    
-   TString Data    = path + "Data"       + file_name;
-   TString WZ      = path + "WZTo3LNu"   + file_name;
-   TString ZZ      = path + "ZZTo4l"     + file_name;
-   TString ttbar   = path + "TTJets"     + file_name;
-   TString DY      = path + "DYJetsToLL" + file_name;
-   TString FakeRates   = path + "FakeRates" + file_name_FR;
+   TString Data    = path + "2017Production_Data_FinalJSON/AllData"       + file_name;
+   TString WZ      = "Moriond_2017/WZTo3LNu"   + file_name;
+   TString ZZ      = path + "2017Production_MC/ZZTo4l"     + file_name;
+   TString ttbar   = "Moriond_2017/TTJets"     + file_name;
+   TString DY      = path + "2017Production_MC/DYJetsToLL_M50" + file_name;
 	
    bool SubtractWZ = true;
    bool Remove_NegBins_FR = true;
@@ -38,7 +36,7 @@ int main( int argc, char *argv[] )
    float pT_bins[] = {5, 7, 10, 20, 30, 40, 50, 80};
 
    SSmethod *ss = new SSmethod();
-   ss->SetLumi(35.9);
+   ss->SetLumi(41.37);
 
    ///////////////////////////////////
    // Fill control histos           //
@@ -48,21 +46,21 @@ int main( int argc, char *argv[] )
    ss->FillDataMCPlots(ZZ);
    ss->FillDataMCPlots(ttbar);
    ss->FillDataMCPlots(DY);
-   ss->SaveDataMCHistos("DataMC_SS.root");
+   ss->SaveDataMCHistos("DataMC_SS_Moriond18.root");
 
    ///////////////////////////////////
    // Fill passing/failling histos  //
    ///////////////////////////////////
    ss->FillFRHistos(Data);
    ss->FillFRHistos(WZ);
-   ss->SaveFRHistos("Histos_SS.root", SubtractWZ, Remove_NegBins_FR);
+   ss->SaveFRHistos("Histos_SS_Moriond18.root", SubtractWZ, Remove_NegBins_FR);
 
    ///////////////////////////////////
    // Calculate fake rates          //
    ///////////////////////////////////
-   ss->GetFRHistos("Histos_SS.root");
+   ss->GetFRHistos("Histos_SS_Moriond18.root");
    ss->Set_pT_binning(8, pT_bins);
-   ss->ProduceFakeRates("FakeRates_SS_Moriond17.root", Data);
+   ss->ProduceFakeRates("FakeRates_SS_Moriond18.root", Data);
 
    ///////////////////////////////////
    // Calculate OS/SS ratios        //
@@ -72,20 +70,21 @@ int main( int argc, char *argv[] )
    ///////////////////////////////////
    // Fill ZX contributions histos  //
    ///////////////////////////////////
-   ss->MakeHistogramsZX(Data, FakeRates);
-   ss->SaveZXHistos("ZXHistos_SS.root");
+   ss->MakeHistogramsZX(Data, "FakeRates_SS_Moriond18.root");
+   ss->SaveZXHistos("ZXHistos_SS_Moriond18.root");
 
    ///////////////////////////////////
    // Plot control plots            //
    ///////////////////////////////////
-   ss->GetDataMCHistos("DataMC_SS.root");
+   ss->GetDataMCHistos("DataMC_SS_Moriond18.root");
    ss->PlotDataMC( "M4l", "Plots" );
 
    ///////////////////////////////////
-   // Plot Z+X plots                //
+   // Plot and fit Z+X              //
    ///////////////////////////////////
-   ss->GetZXHistos("ZXHistos_SS.root");
+   ss->GetZXHistos("ZXHistos_SS_Moriond18.root");
    ss->PlotZX("M4l", "Plots");
+   ss->FitZX("M4l", "Plots");
 	
    delete ss;
 }

@@ -74,8 +74,8 @@ SSmethod::~SSmethod()
 //================================================================================================
 void SSmethod::Calculate_SSOS_Ratio( TString input_file_data_name, TString input_file_MC_name , bool subtractMC )
 {
-   input_file_data = new TFile("./" + input_file_data_name);
-   input_file_MC   = new TFile("./" + input_file_MC_name);
+   input_file_data = new TFile( input_file_data_name);
+   input_file_MC   = new TFile( input_file_MC_name);
    
    hCounters = (TH1F*)input_file_MC->Get("CRZLLTree/Counters");
    gen_sum_weights = (Long64_t)hCounters->GetBinContent(40);
@@ -210,7 +210,7 @@ void SSmethod::Calculate_SSOS_Ratio( TString input_file_data_name, TString input
    cout << "========================================================================================" << endl;
    cout << endl;
    
-   if(false)
+   if(true)
 	{
 		_fs_ROS_SS[Settings::fs4mu]   = _N_OS_events[Settings::fs4mu][Settings::inclusive]/_N_SS_events[Settings::fs4mu][Settings::inclusive];//4mu
 		_fs_ROS_SS[Settings::fs4e]    = _N_OS_events[Settings::fs4e][Settings::inclusive]/_N_SS_events[Settings::fs4e][Settings::inclusive];//4e
@@ -228,7 +228,7 @@ void SSmethod::Calculate_SSOS_Ratio( TString input_file_data_name, TString input
 //===============================================================================
 void SSmethod::FillFRHistos( TString input_file_data_name )
 {
-   input_file_data = new TFile("./" + input_file_data_name);
+   input_file_data = new TFile( input_file_data_name);
    
    hCounters = (TH1F*)input_file_data->Get("CRZLTree/Counters");
    gen_sum_weights = (Long64_t)hCounters->GetBinContent(40);
@@ -285,7 +285,7 @@ void SSmethod::FillFRHistos( TString input_file_data_name )
          _k_factor = calculate_K_factor(input_file_data_name);
          _event_weight = (_lumi * 1000 * xsec * _k_factor * overallEventWeight) / gen_sum_weights;
 
-         if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35)
+         if(LepisID->at(2) && ((fabs(LepLepId->at(2)) == 11) ? LepCombRelIsoPF->at(2) < 999999. : LepCombRelIsoPF->at(2) < 0.35))
          {
 				(fabs(LepLepId->at(2)) == 11) ? _passingSelection[Settings::ele]++ : _passingSelection[Settings::mu]++;
             if(fabs(LepLepId->at(2)) == 11 ) passing[_current_process][Settings::ele]->Fill(LepPt->at(2), (abs(LepEta->at(2)) < 1.479) ? 0.5 : 1.5 , (_current_process == Settings::Data) ? 1 :  _event_weight);
@@ -343,7 +343,7 @@ void SSmethod::FillFRHistos( TString input_file_data_name )
 //===============================================================================
 void SSmethod::FillDataMCPlots( TString input_file_data_name )
 {
-   input_file_data = new TFile("./" + input_file_data_name);
+   input_file_data = new TFile( input_file_data_name);
    
    hCounters = (TH1F*)input_file_data->Get("CRZLLTree/Counters");
    gen_sum_weights = (Long64_t)hCounters->GetBinContent(40);
@@ -406,7 +406,7 @@ void SSmethod::MakeHistogramsZX( TString input_file_data_name, TString  input_fi
    
    FakeRates *FR = new FakeRates( input_file_FR_name );
    
-   input_file_data = new TFile("./" + input_file_data_name);
+   input_file_data = new TFile( input_file_data_name);
    input_tree_data = (TTree*)input_file_data->Get("CRZLLTree/candTree");
    Init( input_tree_data, input_file_data_name , true);
    
@@ -1010,7 +1010,7 @@ void SSmethod::CorrectElectronFakeRate( TString input_file_data_name )
 //========================================================================
 void SSmethod::Calculate_FR_nMissingHits( TString input_file_data_name, TGraphErrors *FR_MissingHits_graph[99][99] )
 {
-	input_file_data = new TFile("./" + input_file_data_name);
+	input_file_data = new TFile( input_file_data_name);
 	
 	hCounters = (TH1F*)input_file_data->Get("CRZLTree/Counters");
 	gen_sum_weights = (Long64_t)hCounters->GetBinContent(40);
@@ -1059,21 +1059,21 @@ void SSmethod::Calculate_FR_nMissingHits( TString input_file_data_name, TGraphEr
 			if ( (Z1Mass > 40.) && (Z1Mass < 120.) )
 			{
 				_N_MissingHits[Settings::_40_MZ1_120][_current_eta_bin][_current_pT_bin] += LepMissingHit->at(2);
-				if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35) _N_Passing[Settings::_40_MZ1_120][_current_eta_bin][_current_pT_bin] += 1.;
+				if(LepisID->at(2) && ((fabs(LepLepId->at(2)) == 11) ? LepCombRelIsoPF->at(2) < 999999. : LepCombRelIsoPF->at(2) < 0.35)) _N_Passing[Settings::_40_MZ1_120][_current_eta_bin][_current_pT_bin] += 1.;
 				else _N_Failling[Settings::_40_MZ1_120][_current_eta_bin][_current_pT_bin] += 1.;
 			}
 			
 			if ( abs( Z1Mass - 91.2 ) < 7. )
 			{
 				_N_MissingHits[Settings::_MZ1mMZtrue_7][_current_eta_bin][_current_pT_bin] += LepMissingHit->at(2);
-				if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35) _N_Passing[Settings::_MZ1mMZtrue_7][_current_eta_bin][_current_pT_bin] += 1.;
+				if(LepisID->at(2) && ((fabs(LepLepId->at(2)) == 11) ? LepCombRelIsoPF->at(2) < 999999. : LepCombRelIsoPF->at(2) < 0.35)) _N_Passing[Settings::_MZ1mMZtrue_7][_current_eta_bin][_current_pT_bin] += 1.;
 				else _N_Failling[Settings::_MZ1mMZtrue_7][_current_eta_bin][_current_pT_bin] += 1.;
 			}
 			
 			if ( (Z1Mass > 60.) && (Z1Mass < 120.) )
 			{
 				_N_MissingHits[Settings::_60_MZ1_120][_current_eta_bin][_current_pT_bin] += LepMissingHit->at(2);
-				if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35) _N_Passing[Settings::_60_MZ1_120][_current_eta_bin][_current_pT_bin] += 1.;
+				if(LepisID->at(2) && ((fabs(LepLepId->at(2)) == 11) ? LepCombRelIsoPF->at(2) < 999999. : LepCombRelIsoPF->at(2) < 0.35)) _N_Passing[Settings::_60_MZ1_120][_current_eta_bin][_current_pT_bin] += 1.;
 				else _N_Failling[Settings::_60_MZ1_120][_current_eta_bin][_current_pT_bin] += 1.;
 			}
 			
@@ -1085,7 +1085,7 @@ void SSmethod::Calculate_FR_nMissingHits( TString input_file_data_name, TGraphEr
 			if ( abs( ((p1+p2)+p3).M() - 91.2 ) < 5. )//3 lepton mass
 			{
 				_N_MissingHits[Settings::_MZ1EmMZtrue_5][_current_eta_bin][_current_pT_bin] += LepMissingHit->at(2);
-				if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35) _N_Passing[Settings::_MZ1EmMZtrue_5][_current_eta_bin][_current_pT_bin] += 1.;
+				if(LepisID->at(2) && ((fabs(LepLepId->at(2)) == 11) ? LepCombRelIsoPF->at(2) < 999999. : LepCombRelIsoPF->at(2) < 0.35)) _N_Passing[Settings::_MZ1EmMZtrue_5][_current_eta_bin][_current_pT_bin] += 1.;
 				else _N_Failling[Settings::_MZ1EmMZtrue_5][_current_eta_bin][_current_pT_bin] += 1.;
 			}
 		}
@@ -1179,7 +1179,7 @@ void SSmethod::Fit_FRnMH_graphs(TGraphErrors *FR_MissingHits_graph[99][99])
 //=============================================================
 void SSmethod::Correct_Final_FR( TString input_file_data_name)
 {
-	input_file_data = new TFile("./" + input_file_data_name);
+	input_file_data = new TFile( input_file_data_name);
 	
 	hCounters = (TH1F*)input_file_data->Get("CRZLLTree/Counters");
 	gen_sum_weights = (Long64_t)hCounters->GetBinContent(40);
@@ -1230,14 +1230,14 @@ void SSmethod::Correct_Final_FR( TString input_file_data_name)
 			_current_eta_bin = Find_Ele_eta_bin ( LepEta->at(2));
 
 			_N_MissingHits_ZLL[_current_eta_bin][_current_pT_bin] += LepMissingHit->at(2);
-			if(LepisID->at(2) && LepCombRelIsoPF->at(2) < 0.35) _N_Passing_ZLL[_current_eta_bin][_current_pT_bin] += 1.;
+			if(LepisID->at(2) && ((fabs(LepLepId->at(2)) == 11) ? LepCombRelIsoPF->at(2) < 999999. : LepCombRelIsoPF->at(2) < 0.35)) _N_Passing_ZLL[_current_eta_bin][_current_pT_bin] += 1.;
 			else _N_Failling_ZLL[_current_eta_bin][_current_pT_bin] += 1.;
 			
 			_current_pT_bin = Find_Ele_pT_bin ( LepPt->at(3) );
 			_current_eta_bin = Find_Ele_eta_bin ( LepEta->at(3));
 			
 			_N_MissingHits_ZLL[_current_eta_bin][_current_pT_bin] += LepMissingHit->at(3);
-			if(LepisID->at(3) && LepCombRelIsoPF->at(3) < 0.35) _N_Passing_ZLL[_current_eta_bin][_current_pT_bin] += 1.;
+			if(LepisID->at(3) && ((fabs(LepLepId->at(3)) == 11) ? LepCombRelIsoPF->at(3) < 999999. : LepCombRelIsoPF->at(3) < 0.35)) _N_Passing_ZLL[_current_eta_bin][_current_pT_bin] += 1.;
 			else _N_Failling_ZLL[_current_eta_bin][_current_pT_bin] += 1.;
 		}
 		
@@ -1506,6 +1506,68 @@ void SSmethod::PlotZX( TString variable_name, TString folder )
    }
 }
 //========================================================================================================
+
+
+//========================================================================================================
+void SSmethod::FitZX( TString variable_name, TString folder )
+{
+   TCanvas *c;
+   TF1  *fit_function;
+   CMS_lumi *lumi = new CMS_lumi;
+	
+	c = new TCanvas("Fits_ZLLss", variable_name, 600, 600);
+	
+   if ( GetVarLogX( variable_name) ) c->SetLogx();
+   if ( GetVarLogY( variable_name) ) c->SetLogy();
+	
+   for( int i_fs = 0; i_fs <= Settings::fs4l ; i_fs++ )
+   {
+      for ( int i_cat = 0; i_cat <= Settings::inclusive; i_cat++ )
+      {
+         TString _fs_label;
+         if ( i_fs == Settings::fs4e)    _fs_label = "m_{4#font[12]{e}} (GeV)";
+         if ( i_fs == Settings::fs4mu)   _fs_label = "m_{4#font[12]{#mu}} (GeV)";
+         if ( i_fs == Settings::fs2e2mu) _fs_label = "m_{2#font[12]{e}2#font[12]{#mu}} (GeV)";
+         if ( i_fs == Settings::fs2mu2e) _fs_label = "m_{2#font[12]{#mu}2#font[12]{e}} (GeV)";
+         if ( i_fs == Settings::fs4l)    _fs_label = "m_{4#font[12]{l}} (GeV)";
+         histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetXaxis()->SetTitle(_fs_label);
+         histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetXaxis()->SetTitleSize(0.04);
+         histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetXaxis()->SetLabelSize(0.04);
+         histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetYaxis()->SetTitle(histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetYaxis()->GetTitle());
+         histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetYaxis()->SetTitleSize(0.04);
+         histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetYaxis()->SetLabelSize(0.04);
+			
+         histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetXaxis()->SetTitleOffset(1.2);
+         histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->GetYaxis()->SetTitleOffset(1.25);
+			
+			gStyle->SetOptFit();
+			gStyle->SetStatY(0.9);
+			gStyle->SetStatX(0.95);
+			gStyle->SetStatW(0.2);
+			gStyle->SetStatH(0.1);
+			
+			fit_function = new TF1("fit_function","[0]*TMath::Landau(x, [1], [2])",70,1000);
+			fit_function->SetParNames("Constant","MPV","#sigma");
+			fit_function->SetParameter(0,1.);
+			fit_function->SetParameter(1,100.);
+			fit_function->SetParameter(2,10.);
+
+			histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->Fit("fit_function");
+			histos_ZX[Settings::regZLL][Settings::Data][i_fs][i_cat]->Draw("");
+			
+         // Draw lumi
+         lumi->set_lumi(c, _lumi, 0);
+			
+         TString _out_file_name;
+         _out_file_name = folder + "/" + variable_name + "_ZX_SS_fit_" + _s_final_state.at(i_fs) + "_" + _s_category.at(i_cat);
+         SavePlots(c, _out_file_name);
+      }
+	}
+	gStyle->SetOptFit(0);
+}
+//========================================================================================================
+
+
 
 //===============================================================
 void SSmethod::RemoveNegativeBins1D(TH1F *h)

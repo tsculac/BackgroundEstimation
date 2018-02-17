@@ -62,8 +62,9 @@ public:
    
    enum _regions_OS
 	{
-		reg2P2F = 0 ,
+		reg2P2F = 0,
 		reg3P1F = 1,
+		regOS   = 2,
 		MAX_NUM_OF_REGIONS_OS
 	};
    
